@@ -6,6 +6,8 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
+      role: string;
+    } & {
       name?: string | null;
       email?: string | null;
       image?: string | null;
@@ -15,7 +17,13 @@ declare module 'next-auth' {
 
 export const getCurrentUser = async () => {
   const session = await getServerSession(authOptions);
-  return session?.user as { id: string; name?: string | null; email?: string | null; image?: string | null } | null;
+  return session?.user as { 
+    id: string; 
+    role: string;
+    name?: string | null; 
+    email?: string | null; 
+    image?: string | null;
+  } | null;
 };
 
 export const requireAuth = async () => {
@@ -31,7 +39,7 @@ export const checkTeamAccess = async (teamId: string) => {
   if (!user) {
     throw new Error('Not authenticated');
   }
-  
+
   const team = await prisma.teamUser.findFirst({
     where: {
       userId: user.id,

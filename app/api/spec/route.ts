@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth.config';
 
+// Disable static generation and always use dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // GET: Fetch the latest specification
 export async function GET(request: Request) {
   try {
