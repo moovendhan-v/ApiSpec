@@ -1,45 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Copy, Share2, Save, Loader2 } from 'lucide-react';
-import dynamic from 'next/dynamic';
-import { useTheme } from 'next-themes';
 import { useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import { getAllEndpoints, Endpoint, OpenAPISpec } from '@/lib/openapi-parser';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import APISidebar from '@/components/Sidebar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Header } from '@/components/Header';
 import ContentArea from '@/components/ContentArea';
 import CodePanel from '@/components/CodePanel';
-
-// Dynamically import the code editor to avoid SSR issues
-const CodeEditor = dynamic(
-  () => import('@uiw/react-textarea-code-editor').then((mod) => {
-    // Import the editor styles
-    import('@uiw/react-textarea-code-editor/dist.css');
-    return mod.default;
-  }),
-  { ssr: false }
-) as any; // Temporary type assertion to avoid TypeScript errors
-
-type Document = {
-  id: string;
-  title: string;
-  content: string;
-  description: string | null;
-  isPublic: boolean;
-  isOwner?: boolean;
-  createdAt: string;
-  updatedAt: string;
-  user: {
-    id: string;
-    name: string | null;
-    email: string | null;
-    image: string | null;
-  };
-};
-
 
 // This is the main page component that handles authentication
 export default function Home() {
@@ -78,7 +52,7 @@ export default function Home() {
 }
 
 // This component will be used in the dashboard page
-export function ViewDocumentPage() {
+export function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();

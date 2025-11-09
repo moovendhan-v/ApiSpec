@@ -1,4 +1,5 @@
 export interface OpenAPISpec {
+  servers: string[];
   openapi: string;
   info: {
     title: string;
