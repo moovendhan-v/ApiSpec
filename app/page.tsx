@@ -15,8 +15,10 @@ import {
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import APISidebar from '@/components/Sidebar';
+import { Suspense } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -191,5 +193,17 @@ export default function Home() {
         </ResizablePanelGroup>
       </div>
     </SidebarProvider>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center">
+        <Skeleton className="h-10 w-full max-w-md" />
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
