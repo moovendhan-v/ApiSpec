@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Blueshirt API Documentation',
-  description: 'API documentation for Blueshirt Backend APIs',
+  title: 'API Documentation',
+  description: 'API documentation for API',
 };
 
 export default function RootLayout({
