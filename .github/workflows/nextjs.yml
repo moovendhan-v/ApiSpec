@@ -31,6 +31,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
       - name: Detect package manager
         id: detect-package-manager
         run: |
@@ -38,16 +39,45 @@ jobs:
             echo "manager=yarn" >> $GITHUB_OUTPUT
             echo "command=install" >> $GITHUB_OUTPUT
             echo "runner=yarn" >> $GITHUB_OUTPUT
+            echo "cache-name=yarn-deps" >> $GITHUB_OUTPUT
             exit 0
           elif [ -f "${{ github.workspace }}/package.json" ]; then
             echo "manager=npm" >> $GITHUB_OUTPUT
             echo "command=ci" >> $GITHUB_OUTPUT
             echo "runner=npx --no-install" >> $GITHUB_OUTPUT
+            echo "cache-name=npm-deps" >> $GITHUB_OUTPUT
             exit 0
           else
             echo "Unable to determine package manager"
             exit 1
           fi
+          
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        if: steps.detect-package-manager.outputs.manager == 'npm'
+        run: |
+          echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+          
+      - name: Cache node modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: |
+            ${{ steps.npm-cache-dir.outputs.dir }}
+            **/node_modules
+            !**/node_modules/**/node_modules
+          key: ${{ runner.os }}-${{ steps.detect-package-manager.outputs.cache-name }}-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.detect-package-manager.outputs.cache-name }}-
+            
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        id: cache-next-build
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-next-build-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx', '**/*.json') }}
+          restore-keys: |
+            ${{ runner.os }}-next-build-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
