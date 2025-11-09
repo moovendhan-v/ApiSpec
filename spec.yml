@@ -1,0 +1,1370 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore API
+  description: |
+    A complete sample API that includes pet and user management with full examples.
+    
+    ## Authentication
+    Most user endpoints require Bearer token authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+  contact:
+    email: support@petstore.io
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://petstore.swagger.io/v1
+    description: Development server
+  - url: https://api.petstore.io/v1
+    description: Production server
+
+tags:
+  - name: pets
+    description: Pet management operations
+  - name: users
+    description: User management and authentication
+
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      description: |
+        Retrieve a paginated list of all pets currently available in the system.  
+
+        ### 🐾 Use Cases
+        - Fetch all pets to display in a pet store catalog.
+        - Paginate results to improve performance on large datasets.
+        - Limit the number of returned items to avoid overloading the client.
+
+      operationId: listPets
+      tags:
+        - pets
+      parameters:
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+          example: 10
+      responses:
+        200:
+          description: An paged array of pets retrieved successfully
+          headers:
+            x-next:
+              description: A link to the next page of responses
+              schema:
+                type: string
+              example: /pets?limit=10&offset=10
+          content:
+            application/json:    
+              schema:
+                $ref: "#/components/schemas/Pets"
+              examples:
+                petList:
+                  summary: Sample list of pets
+                  value:
+                    - id: 1
+                      name: "Buddy"
+                      tag: "dog"
+                    - id: 2
+                      name: "Whiskers"
+                      tag: "cat"
+                    - id: 3
+                      name: "Goldie"
+                      tag: "fish"
+        400:
+          description: Bad request - Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalidLimit:
+                  summary: Invalid limit parameter
+                  value:
+                    code: 400
+                    message: "Invalid limit parameter. Must be between 1 and 100"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                serverError:
+                  summary: Server error example
+                  value:
+                    code: 500
+                    message: "Internal server error occurred"
+    
+    post:
+      summary: Create a pet
+      description: Add a new pet to the store
+      operationId: createPets
+      tags:
+        - pets
+      requestBody:
+        description: Pet object that needs to be added
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetCreate"
+            examples:
+              dog:
+                summary: Create a dog
+                value:
+                  name: "Max"
+                  tag: "dog"
+              cat:
+                summary: Create a cat
+                value:
+                  name: "Luna"
+                  tag: "cat"
+      responses:
+        201:
+          description: Pet created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+              examples:
+                createdPet:
+                  summary: Successfully created pet
+                  value:
+                    id: 123
+                    name: "Max"
+                    tag: "dog"
+        400:
+          description: Bad request - Invalid pet data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                missingName:
+                  summary: Missing required field
+                  value:
+                    code: 400
+                    message: "Pet name is required"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /pets/{petId}:
+    get:
+      summary: Info for a specific pet
+      description: Get detailed information about a pet by its ID
+      operationId: showPetById
+      tags:
+        - pets
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: string
+          example: "123"
+      responses:
+        200:
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+              examples:
+                petDetails:
+                  summary: Pet details example
+                  value:
+                    id: 123
+                    name: "Buddy"
+                    tag: "dog"
+        404:
+          description: Pet not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                notFound:
+                  summary: Pet not found
+                  value:
+                    code: 404
+                    message: "Pet with ID 123 not found"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  
+  /users:
+    get:
+      summary: List all users
+      description: |
+        Retrieve a paginated list of all users. Requires authentication.
+        
+        **Authorization Required**: Bearer token must be included in request headers.
+      operationId: listUsers
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of users to return (max 100)
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+          example: 10
+        - name: offset
+          in: query
+          description: Number of users to skip for pagination
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+          example: 0
+        - name: role
+          in: query
+          description: Filter users by role
+          required: false
+          schema:
+            type: string
+            enum: [admin, user, guest]
+          example: "user"
+        - name: status
+          in: query
+          description: Filter users by status
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive, suspended]
+          example: "active"
+      responses:
+        200:
+          description: A paginated array of users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    $ref: "#/components/schemas/Users"
+                  total:
+                    type: integer
+                    description: Total number of users
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+              examples:
+                userList:
+                  summary: Sample user list
+                  value:
+                    users:
+                      - id: 1
+                        email: "john.doe@example.com"
+                        firstName: "John"
+                        lastName: "Doe"
+                        phone: "+1234567890"
+                        role: "user"
+                        status: "active"
+                        createdAt: "2024-01-15T10:30:00Z"
+                        updatedAt: "2024-01-20T14:45:00Z"
+                      - id: 2
+                        email: "jane.smith@example.com"
+                        firstName: "Jane"
+                        lastName: "Smith"
+                        phone: "+1987654321"
+                        role: "admin"
+                        status: "active"
+                        createdAt: "2024-01-10T09:00:00Z"
+                        updatedAt: "2024-01-18T16:20:00Z"
+                    total: 2
+                    limit: 10
+                    offset: 0
+        400:
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalidLimit:
+                  summary: Invalid limit parameter
+                  value:
+                    code: 400
+                    message: "Invalid limit parameter. Must be between 1 and 100"
+                    details: "The provided limit value exceeds maximum allowed"
+        401:
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                missingToken:
+                  summary: Missing authentication token
+                  value:
+                    code: 401
+                    message: "Authentication required. Please provide a valid Bearer token"
+                invalidToken:
+                  summary: Invalid token
+                  value:
+                    code: 401
+                    message: "Invalid or expired authentication token"
+        403:
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                insufficientPermissions:
+                  summary: Insufficient permissions
+                  value:
+                    code: 403
+                    message: "You do not have permission to list users"
+                    details: "Admin role required for this operation"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    
+    post:
+      summary: Create a new user
+      description: |
+        Register a new user in the system. This endpoint does not require authentication.
+        
+        **Password Requirements:**
+        - Minimum 8 characters
+        - Must contain at least one uppercase letter
+        - Must contain at least one lowercase letter
+        - Must contain at least one number
+      operationId: createUser
+      tags:
+        - users
+      requestBody:
+        description: User object to be created
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+            examples:
+              newUser:
+                summary: Create a regular user
+                value:
+                  email: "alice.johnson@example.com"
+                  password: "SecurePass123"
+                  firstName: "Alice"
+                  lastName: "Johnson"
+                  phone: "+1555123456"
+                  role: "user"
+              newAdmin:
+                summary: Create an admin user
+                value:
+                  email: "admin@example.com"
+                  password: "AdminPass123"
+                  firstName: "Admin"
+                  lastName: "User"
+                  phone: "+1555999999"
+                  role: "admin"
+      responses:
+        201:
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              examples:
+                createdUser:
+                  summary: Successfully created user
+                  value:
+                    id: 101
+                    email: "alice.johnson@example.com"
+                    firstName: "Alice"
+                    lastName: "Johnson"
+                    phone: "+1555123456"
+                    role: "user"
+                    status: "active"
+                    createdAt: "2024-11-08T10:30:00Z"
+                    updatedAt: "2024-11-08T10:30:00Z"
+        400:
+          description: Bad request - Invalid user data or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                emailExists:
+                  summary: Email already registered
+                  value:
+                    code: 400
+                    message: "Email address already registered"
+                    details: "A user with this email already exists in the system"
+                invalidEmail:
+                  summary: Invalid email format
+                  value:
+                    code: 400
+                    message: "Invalid email format"
+                    details: "Please provide a valid email address"
+                weakPassword:
+                  summary: Weak password
+                  value:
+                    code: 400
+                    message: "Password does not meet security requirements"
+                    details: "Password must be at least 8 characters with uppercase, lowercase, and numbers"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  
+  /users/{userId}:
+    get:
+      summary: Get user by ID
+      description: |
+        Retrieve detailed information about a specific user. Requires authentication.
+        Users can view their own profile. Admin users can view any user profile.
+      operationId: getUserById
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The ID of the user to retrieve
+          schema:
+            type: integer
+            format: int64
+          example: 101
+      responses:
+        200:
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              examples:
+                userDetails:
+                  summary: User profile example
+                  value:
+                    id: 101
+                    email: "john.doe@example.com"
+                    firstName: "John"
+                    lastName: "Doe"
+                    phone: "+1234567890"
+                    role: "user"
+                    status: "active"
+                    createdAt: "2024-01-15T10:30:00Z"
+                    updatedAt: "2024-11-08T14:45:00Z"
+        400:
+          description: Bad request - Invalid user ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalidId:
+                  summary: Invalid user ID
+                  value:
+                    code: 400
+                    message: "Invalid user ID format"
+                    details: "User ID must be a positive integer"
+        401:
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                unauthorized:
+                  summary: Authentication required
+                  value:
+                    code: 401
+                    message: "Authentication required to view user profile"
+        403:
+          description: Forbidden - Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                accessDenied:
+                  summary: Access denied
+                  value:
+                    code: 403
+                    message: "Access denied"
+                    details: "You can only view your own profile unless you are an admin"
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                notFound:
+                  summary: User not found
+                  value:
+                    code: 404
+                    message: "User not found"
+                    details: "No user exists with ID 101"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    
+    put:
+      summary: Update user
+      description: |
+        Update user information. Requires authentication.
+        Users can update their own profile. Admin users can update any user profile.
+      operationId: updateUser
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The ID of the user to update
+          schema:
+            type: integer
+            format: int64
+          example: 101
+      requestBody:
+        description: User object with updated information
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+            examples:
+              updateProfile:
+                summary: Update user profile
+                value:
+                  firstName: "John"
+                  lastName: "Smith"
+                  phone: "+1234567899"
+              updateEmail:
+                summary: Update email address
+                value:
+                  email: "newemail@example.com"
+              updateStatus:
+                summary: Update user status (admin only)
+                value:
+                  status: "suspended"
+      responses:
+        200:
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              examples:
+                updatedUser:
+                  summary: Successfully updated user
+                  value:
+                    id: 101
+                    email: "newemail@example.com"
+                    firstName: "John"
+                    lastName: "Smith"
+                    phone: "+1234567899"
+                    role: "user"
+                    status: "active"
+                    createdAt: "2024-01-15T10:30:00Z"
+                    updatedAt: "2024-11-08T15:20:00Z"
+        400:
+          description: Bad request - Invalid user data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalidData:
+                  summary: Invalid update data
+                  value:
+                    code: 400
+                    message: "Invalid user data provided"
+                    details: "Email format is invalid"
+        401:
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        403:
+          description: Forbidden - Cannot update other users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                forbidden:
+                  summary: Permission denied
+                  value:
+                    code: 403
+                    message: "Permission denied"
+                    details: "You can only update your own profile"
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    
+    delete:
+      summary: Delete user
+      description: |
+        Delete a user account. Requires authentication.
+        Users can delete their own account. Admin users can delete any user account.
+        Admin accounts cannot be deleted.
+      operationId: deleteUser
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The ID of the user to delete
+          schema:
+            type: integer
+            format: int64
+          example: 101
+      responses:
+        204:
+          description: User deleted successfully (no content returned)
+        400:
+          description: Bad request - Invalid user ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalidId:
+                  summary: Invalid user ID
+                  value:
+                    code: 400
+                    message: "Invalid user ID format"
+        401:
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                unauthorized:
+                  summary: Authentication required
+                  value:
+                    code: 401
+                    message: "Authentication required to delete user"
+        403:
+          description: Forbidden - Cannot delete other users or admin users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                cannotDeleteAdmin:
+                  summary: Cannot delete admin
+                  value:
+                    code: 403
+                    message: "Cannot delete admin users"
+                    details: "Admin accounts are protected from deletion"
+                cannotDeleteOthers:
+                  summary: Cannot delete other users
+                  value:
+                    code: 403
+                    message: "Permission denied"
+                    details: "You can only delete your own account"
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                notFound:
+                  summary: User not found
+                  value:
+                    code: 404
+                    message: "User not found"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  
+  /users/login:
+    post:
+      summary: User login
+      description: |
+        Authenticate a user and receive a JWT token for subsequent API requests.
+        
+        **Usage:**
+        1. Send email and password
+        2. Receive JWT token in response
+        3. Include token in Authorization header for protected endpoints:
+           `Authorization: Bearer <token>`
+      operationId: loginUser
+      tags:
+        - users
+      requestBody:
+        description: User credentials for authentication
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLogin"
+            examples:
+              userLogin:
+                summary: Regular user login
+                value:
+                  email: "john.doe@example.com"
+                  password: "SecurePass123"
+              adminLogin:
+                summary: Admin user login
+                value:
+                  email: "admin@example.com"
+                  password: "AdminPass123"
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT authentication token
+                  user:
+                    $ref: "#/components/schemas/User"
+                  expiresIn:
+                    type: integer
+                    description: Token expiration time in seconds
+              examples:
+                successfulLogin:
+                  summary: Successful login response
+                  value:
+                    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMDEiLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE2OTkzNDQwMDAsImV4cCI6MTY5OTM0NzYwMH0.abc123xyz"
+                    user:
+                      id: 101
+                      email: "john.doe@example.com"
+                      firstName: "John"
+                      lastName: "Doe"
+                      phone: "+1234567890"
+                      role: "user"
+                      status: "active"
+                      createdAt: "2024-01-15T10:30:00Z"
+                      updatedAt: "2024-11-08T14:45:00Z"
+                    expiresIn: 3600
+        400:
+          description: Bad request - Missing or invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    code: 400
+                    message: "Email and password are required"
+                invalidFormat:
+                  summary: Invalid email format
+                  value:
+                    code: 400
+                    message: "Invalid email format"
+        401:
+          description: Unauthorized - Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalidCredentials:
+                  summary: Invalid credentials
+                  value:
+                    code: 401
+                    message: "Invalid email or password"
+                accountSuspended:
+                  summary: Account suspended
+                  value:
+                    code: 401
+                    message: "Account suspended"
+                    details: "Your account has been suspended. Please contact support"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  
+  /users/logout:
+    post:
+      summary: User logout
+      description: |
+        Logout the current user and invalidate their JWT token.
+        Requires authentication.
+      operationId: logoutUser
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              examples:
+                successfulLogout:
+                  summary: Successful logout
+                  value:
+                    message: "Successfully logged out"
+        401:
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                unauthorized:
+                  summary: Not authenticated
+                  value:
+                    code: 401
+                    message: "Authentication required"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  
+  /users/{userId}/password:
+    patch:
+      summary: Change user password
+      description: |
+        Change password for a user account. Requires authentication.
+        Users can only change their own password.
+        
+        **Password Requirements:**
+        - Minimum 8 characters
+        - Must contain uppercase, lowercase, and numbers
+        - Cannot be the same as the current password
+      operationId: changePassword
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The ID of the user changing password
+          schema:
+            type: integer
+            format: int64
+          example: 101
+      requestBody:
+        description: Current and new password
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordChange"
+            examples:
+              changePassword:
+                summary: Change password request
+                value:
+                  currentPassword: "OldPassword123"
+                  newPassword: "NewSecurePass456"
+      responses:
+        200:
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              examples:
+                success:
+                  summary: Password changed
+                  value:
+                    message: "Password updated successfully"
+        400:
+          description: Bad request - Password validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                weakPassword:
+                  summary: Weak password
+                  value:
+                    code: 400
+                    message: "New password does not meet security requirements"
+                    details: "Password must be at least 8 characters with uppercase, lowercase, and numbers"
+                samePassword:
+                  summary: Same as current password
+                  value:
+                    code: 400
+                    message: "New password must be different from current password"
+        401:
+          description: Unauthorized - Current password is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                incorrectPassword:
+                  summary: Incorrect current password
+                  value:
+                    code: 401
+                    message: "Current password is incorrect"
+        403:
+          description: Forbidden - Cannot change password for other users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                forbidden:
+                  summary: Permission denied
+                  value:
+                    code: 403
+                    message: "You can only change your own password"
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                notFound:
+                  summary: User not found
+                  value:
+                    code: 404
+                    message: "User not found"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token-based authentication. Include the token in the Authorization header:
+        ```
+        Authorization: Bearer <your-jwt-token>
+        ```
+  # 
+  schemas:
+    Pet:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier for the pet
+          example: 123
+        name:
+          type: string
+          description: Name of the pet
+          minLength: 1
+          maxLength: 100
+          example: "Buddy"
+        tag:
+          type: string
+          description: Category or breed of the pet
+          example: "dog"
+
+    PetCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the pet
+          minLength: 1
+          maxLength: 100
+          example: "Max"
+        tag:
+          type: string
+          description: Category or breed of the pet
+          example: "dog"
+    
+    Pets:
+      type: array
+      items:
+        $ref: "#/components/schemas/Pet"
+    
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - firstName
+        - lastName
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique user identifier
+          example: 101
+        email:
+          type: string
+          format: email
+          description: User's email address (must be unique)
+          example: "john.doe@example.com"
+        firstName:
+          type: string
+          description: User's first name
+          minLength: 1
+          maxLength: 50
+          example: "John"
+        lastName:
+          type: string
+          description: User's last name
+          minLength: 1
+          maxLength: 50
+          example: "Johnson"
+        phone:
+          type: string
+          description: User's phone number in E.164 format
+          pattern: '^\+?[1-9]\d{1,14}$'
+        role:
+          type: string
+          enum: [admin, user, guest]
+          description: User's role in the system
+          default: user
+          example: "user"
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+          description: User account status
+          default: active
+          example: "active"
+        createdAt:
+          type: string
+          format: date-time
+          description: User account creation timestamp
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: User account last update timestamp
+          example: "2024-11-08T14:45:00Z"
+    
+    Users:
+      type: array
+      items:
+        $ref: "#/components/schemas/User"
+    
+    UserCreate:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - phone
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address (must be unique)
+          example: "alice.johnson@example.com"
+        password:
+          type: string
+          format: password
+          description: User's password (minimum 8 characters, must contain uppercase, lowercase, and numbers)
+          minLength: 8
+          example: "SecurePass123"
+        firstName:
+          type: string
+          description: User's first name
+          minLength: 1
+          maxLength: 50
+          example: "Alice"
+        lastName:
+          type: string
+          description: User's last name
+          minLength: 1
+          maxLength: 50
+          example: "Doe"
+        role:
+          type: string
+          enum: [admin, user, guest]
+          description: User's role in the system
+          default: user
+          example: "user"
+    
+    UserUpdate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "newemail@example.com"
+        firstName:
+          type: string
+          description: User's first name
+          minLength: 1
+          maxLength: 50
+          example: "John"
+        lastName:
+          type: string
+          description: User's last name
+          minLength: 1
+          maxLength: 50
+          example: "Smith"
+        phone:
+          type: string
+          description: User's phone number in E.164 format
+          pattern: '^\+?[1-9]\d{1,14}'
+          example: "+1555123456"
+        role:
+          type: string
+          enum: [admin, user, guest]
+          description: User's role in the system
+          default: user
+          example: "user"
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+          description: User account status
+          default: active
+          example: "active"
+        createdAt:
+          type: string
+          format: date-time
+          description: User account creation timestamp
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: User account last update timestamp
+    
+    # Users:
+    #   type: array
+    #   items:
+    #     $ref: "#/components/schemas/User"
+    
+    # UserCreate:
+    #   type: object
+    #   required:
+    #     - email
+    #     - password
+    #     - firstName
+    #     - lastName
+    #   properties:
+    #     email:
+    #       type: string
+    #       format: email
+    #       description: User's email address (must be unique)
+    #       example: "alice.johnson@example.com"
+    #     password:
+    #       type: string
+    #       format: password
+    #       description: User's password (minimum 8 characters, must contain uppercase, lowercase, and numbers)
+    #       minLength: 8
+    #       example: "SecurePass123"
+    #     firstName:
+    #       type: string
+    #       description: User's first name
+    #       minLength: 1
+    #       maxLength: 50
+    #       example: "Alice"
+    #     lastName:
+    #       type: string
+    #       description: User's last name
+    #       minLength: 1
+    #       maxLength: 50
+    #       example: "Doe"
+    #     phone:
+    #       type: string
+    #       description: User's phone number in E.164 format
+    #       pattern: '^[1-9]\d{1,14}$'
+    #       example: "+1234567899"
+    #     status:
+    #       type: string
+    #       enum: [active, inactive, suspended]
+    #       description: User account status (admin only)
+    #       example: "active"
+    
+    # UserLogin:
+    #   type: object
+    #   required:
+    #     - email
+    #     - password
+    #   properties:
+    #     email:
+    #       type: string
+    #       format: email
+    #       description: User's email address
+    #       example: "john.doe@example.com"
+    #     password:
+    #       type: string
+    #       format: password
+    #       description: User's password
+    #       example: "SecurePass123"
+    
+    # PasswordChange:
+    #   type: object
+    #   required:
+    #     - currentPassword
+    #     - newPassword
+    #   properties:
+    #     currentPassword:
+    #       type: string
+    #       format: password
+    #       description: User's current password
+    #       example: "OldPassword123"
+    #     newPassword:
+    #       type: string
+    #       format: password
+    #       description: User's new password (minimum 8 characters, must contain uppercase, lowercase, and numbers)
+    #       minLength: 8
+    #       example: "NewSecurePass456"
+    
+    # Error:
+    #   type: object
+    #   required:
+    #     - code
+    #     - message
+    #   properties:
+    #     code:
+    #       type: integer
+    #       format: int32
+    #       description: HTTP status code or application-specific error code
+    #       example: 400
+    #     message:
+    #       type: string
+    #       description: Human-readable error message
+    #       example: "Invalid request parameters"
+    #     details:
+    #       type: string
+    #       description: Additional error details or suggestions for resolution
+    #       example: "The email field must be a valid email address"Doe"
+    #     phone:
+    #       type: string
+    #       description: User's phone number in E.164 format
+    #       pattern: '^\+?[1-9]\d{1,14}$'
+    #       example: "+1234567890"
+    #     role:
+    #       type: string
+    #       enum: [admin, user, guest]
+    #       description: User's role in the system
+    #       default: user
+    #       example: "user"
+    #     status:
+    #       type: string
+    #       enum: [active, inactive, suspended]
+    #       description: User account status
+    #       default: active
+    #       example: "active"
+    #     createdAt:
+    #       type: string
+    #       format: date-time
+    #       description: User account creation timestamp
+    #       example: "2024-01-15T10:30:00Z"
+    #     updatedAt:
+    #       type: string
+    #       format: date-time
+    #       description: User account last update timestamp
+    #       example: "2024-11-08T14:45:00Z"
+    
+    # Users:
+    #   type: array
+    #   items:
+    #     $ref: "#/components/schemas/User"
+    
+    # UserCreate:
+    #   type: object
+    #   required:
+    #     - email
+    #     - password
+    #     - firstName
+    #     - lastName
+    #   properties:
+    #     email:
+    #       type: string
+    #       format: email
+    #       description: User's email address (must be unique)
+    #       example: "alice.johnson@example.com"
+    #     password:
+    #       type: string
+    #       format: password
+    #       description: User's password (minimum 8 characters, must contain uppercase, lowercase, and numbers)
+    #       minLength: 8
+    #       example: "SecurePass123"
+    #     firstName:
+    #       type: string
+    #       description: User's first name
+    #       minLength: 1
+    #       maxLength: 50
+    #       example: "Alice"
+    #     lastName:
+    #       type: string
+    #       description: User's last name
+    #       minLength: 1
+    #       maxLength: 50
+    #       example: "Doe"
