@@ -1,93 +1,106 @@
-# API Spec Documentation Package
+# API Specification Viewer
 
-A Next.js package that renders OpenAPI specifications in a beautiful, dark-themed UI similar to Swagger UI.
+A modern, interactive web application for viewing and exploring OpenAPI specifications. Built with Next.js, React, and TypeScript, this tool provides a clean, user-friendly interface to navigate through API documentation.
+
+![API Specification Viewer](https://via.placeholder.com/1200x600?text=API+Specification+Viewer)
 
 ## Features
 
-- 🎨 Dark theme UI matching the design specification
-- 📱 Responsive three-column layout
-- 🔍 Search functionality for endpoints
-- 📝 Interactive endpoint documentation
-- 💻 Code examples in multiple languages (cURL, JavaScript, Java, Swift)
-- 🔐 Authorization documentation
-- 📋 Request/Response examples
+- **Interactive Documentation**: View and navigate through API endpoints with ease
+- **Real-time Search**: Quickly find endpoints using the search functionality
+- **Code Examples**: View request/response examples in multiple formats
+- **Responsive Design**: Works on both desktop and mobile devices
+- **Dark Mode**: Built-in dark theme for comfortable viewing
+- **Export to Postman**: Export API collections directly to Postman
+
+## Tech Stack
+
+- **Frontend**:
+  - Next.js 14
+  - React 18
+  - TypeScript
+  - Tailwind CSS
+  - Radix UI Components
+  - React Syntax Highlighter
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 18 or later
+- npm or yarn
+
 ### Installation
 
-```bash
-npm install
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/api-spec-viewer.git
+   cd api-spec-viewer
+   ```
 
-### Development
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn
+   ```
 
-```bash
-npm run dev
-```
+3. Add your OpenAPI specification:
+   - Place your `spec.yml` or `spec.json` file in the root directory
+   - Or configure the path in the application settings
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+### Running Locally
 
-### Build
+1. Start the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-```bash
-npm run build
-npm start
-```
+2. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Project Structure
 
 ```
 .
-├── app/
-│   ├── api/
-│   │   └── spec/
-│   │       └── route.ts      # API route to serve spec.yml
-│   ├── globals.css           # Global styles
-│   ├── layout.tsx            # Root layout
-│   └── page.tsx              # Main page component
-├── components/
-│   ├── Header.tsx            # Top header with logo and navigation
-│   ├── Sidebar.tsx           # Left sidebar with endpoint navigation
-│   ├── ContentArea.tsx        # Middle content area with endpoint details
-│   └── CodePanel.tsx         # Right panel with code examples
-├── lib/
-│   └── openapi-parser.ts     # OpenAPI spec parser utilities
-└── spec.yml                  # Your OpenAPI specification file
+├── app/                  # Next.js app directory
+│   ├── api/             # API routes
+│   ├── layout.tsx       # Root layout
+│   └── page.tsx         # Main page component
+├── components/          # Reusable components
+│   ├── ui/             # UI components
+│   ├── ContentArea.tsx  # Main content display
+│   ├── Header.tsx       # Application header
+│   ├── Sidebar.tsx      # Navigation sidebar
+│   └── RequestModel.tsx # Request/response model viewer
+├── lib/                 # Utility functions
+│   └── openapi-parser.ts# OpenAPI spec parsing logic
+├── hooks/               # Custom React hooks
+│   ├── handle-copy.tsx  # Copy to clipboard functionality
+│   └── postman-export.tsx # Postman export functionality
+└── spec.yml             # Example OpenAPI specification
 ```
 
-## Usage
+## Available Scripts
 
-1. Place your OpenAPI specification file (`spec.yml`) in the root directory
-2. The app will automatically load and parse the spec file
-3. Navigate through endpoints using the left sidebar
-4. View endpoint details, parameters, and code examples
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
 
-## Customization
+## Contributing
 
-### Colors
-
-The color scheme can be customized in `tailwind.config.js`:
-
-```javascript
-colors: {
-  'dark-bg': '#1a1a1a',
-  'dark-sidebar': '#252525',
-  'dark-content': '#2a2a2a',
-  'dark-border': '#333333',
-}
-```
-
-### Styling
-
-Global styles are in `app/globals.css`. Component-specific styles use Tailwind CSS classes.
-
-## Requirements
-
-- Node.js 18+ 
-- npm or yarn
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Acknowledgements
+
+- [Next.js](https://nextjs.org/)
+- [React](https://reactjs.org/)
+- [OpenAPI Specification](https://www.openapis.org/)
+- [Radix UI](https://www.radix-ui.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
