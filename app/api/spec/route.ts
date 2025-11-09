@@ -1,41 +1,96 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/auth.config';
 
+// GET: Fetch the latest specification
 export async function GET(request: Request) {
   try {
-    const filePath = path.join(process.cwd(), 'spec.yml');
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-
-    // Get cookies header
-    const cookieHeader = request.headers.get('cookie') || '';
-    console.log('Raw cookies:', cookieHeader);
-
-    // Parse manually
-    const cookies = Object.fromEntries(
-      cookieHeader.split(';').map(c => {
-        const [key, ...v] = c.trim().split('=');
-        return [key, v.join('=')];
-      })
-    );
-
-    const apiKey = cookies.apiKey;
-    console.log('Parsed apiKey:', apiKey);
-
-    // Validate
-    // TODO: Replace with actual API key from env later
-    if (apiKey !== 'demon') {
-      console.log('Unauthorized');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    return new NextResponse(fileContents, {
-      headers: {
-        'Content-Type': 'text/yaml; charset=utf-8',
+    // Find the most recent document for the user
+    const spec = await prisma.document.findFirst({
+      where: {
+        user: { email: session.user.email },
+        title: 'API Specification'
       },
+      orderBy: {
+        updatedAt: 'desc'
+      }
+    });
+
+    if (!spec) {
+      return new NextResponse('No specification found', { status: 404 });
+    }
+
+    return NextResponse.json({
+      id: spec.id,
+      content: spec.content,
+      updatedAt: spec.updatedAt
     });
   } catch (error) {
-    console.error('Error loading spec:', error);
-    return NextResponse.json({ error: 'Failed to load spec file' }, { status: 500 });
+    console.error('Error fetching specification:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
+// PUT: Update the specification
+export async function PUT(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const { content } = await request.json();
+    
+    if (!content) {
+      return new NextResponse('Content is required', { status: 400 });
+    }
+
+    // Find the user
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    });
+
+    if (!user) {
+      return new NextResponse('User not found', { status: 404 });
+    }
+
+    // Update or create the specification
+    const spec = await prisma.document.upsert({
+      where: {
+        id: 'api-spec', // Using a fixed ID for the API spec
+      },
+      update: {
+        content,
+        title: 'API Specification',
+        description: 'Main API specification document',
+        isPublic: false,
+      },
+      create: {
+        id: 'api-spec',
+        title: 'API Specification',
+        description: 'Main API specification document',
+        content,
+        isPublic: false,
+        userId: user.id,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      id: spec.id,
+      updatedAt: spec.updatedAt
+    });
+  } catch (error) {
+    console.error('Error updating specification:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

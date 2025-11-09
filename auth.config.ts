@@ -1,8 +1,29 @@
 // auth.config.ts
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
-import { AuthOptions } from 'next-auth';
+import { AuthOptions, DefaultSession, User } from 'next-auth';
 import GitHubProvider from 'next-auth/providers/github';
+
+// Extend the built-in session types
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+      role: string;
+    } & DefaultSession['user'];
+  }
+
+  interface User {
+    role?: string;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    role?: string;
+    id?: string;
+  }
+}
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -16,22 +37,23 @@ export const authOptions: AuthOptions = {
           name: profile.name || profile.login,
           email: profile.email,
           image: profile.avatar_url,
-          role: 'USER', // Add a default role
-        };
+          role: 'MEMBER',
+        } as User;
       },
     }),
   ],
   callbacks: {
-    async session({ session, user, token }) {
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = user?.id || token.sub;
-        session.user.role = user?.role || token.role || 'USER';
+        session.user.id = token.sub || token.id || '';
+        session.user.role = token.role || 'MEMBER';
       }
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
+        token.id = user.id;
+        token.role = user.role || 'MEMBER';
       }
       return token;
     },
@@ -49,8 +71,8 @@ export const authOptions: AuthOptions = {
     async signIn(message) {
       console.log('User signed in:', message.user?.email);
     },
-    async error(error) {
-      console.error('Auth error:', error);
-    },
+    // async error(error: Error) {
+    //   console.error('Auth error:', error);
+    // },
   },
 };

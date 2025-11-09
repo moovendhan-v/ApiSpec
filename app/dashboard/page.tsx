@@ -40,17 +40,34 @@ export default function DashboardPage() {
 
     try {
       setLoading(true);
-      // Here you would typically make an API call to save the document
-      const newDoc = {
-        id: Math.random().toString(36).substring(2, 9),
-        title: docTitle,
-        content: apiSpec,
-        isPublic,
-        password: isPublic ? undefined : password,
-        createdAt: new Date(),
-      };
+      
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: docTitle,
+          content: apiSpec,
+          isPublic,
+          password: isPublic ? undefined : password,
+          description: `API Documentation for ${docTitle}`,
+        }),
+      });
 
-      addDocument(newDoc);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to publish document');
+      }
+
+      const newDoc = await response.json();
+      addDocument({
+        title: newDoc.title,
+        content: apiSpec,
+        isPublic: newDoc.isPublic,
+      });
+      
+      // The store will automatically add id and createdAt
       
       toast("Success", {
         description: 'Your API documentation has been published successfully!',
@@ -64,7 +81,7 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error publishing document:', error);
       toast("Error", {
-        description: 'Failed to publish document. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to publish document. Please try again.',
       });
     } finally {
       setLoading(false);

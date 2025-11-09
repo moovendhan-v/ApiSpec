@@ -37,6 +37,12 @@ export function Navbar() {
                   Dashboard
                 </Link>
                 <Link
+                  href="/documents"
+                  className="transition-colors hover:text-white/80 text-white/60"
+                >
+                  API Specs
+                </Link>
+                <Link
                   href="/teams"
                   className="transition-colors hover:text-white/80 text-white/60"
                 >
@@ -62,6 +68,9 @@ export function Navbar() {
                   <>
                     <Link href="/dashboard" className="px-4 py-2 hover:bg-white/10 rounded-md">
                       Dashboard
+                    </Link>
+                    <Link href="/documents" className="px-4 py-2 hover:bg-white/10 rounded-md">
+                      API Specs
                     </Link>
                     <Link href="/teams" className="px-4 py-2 hover:bg-white/10 rounded-md">
                       Teams
