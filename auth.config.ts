@@ -1,3 +1,4 @@
+// auth.config.ts
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import { AuthOptions } from 'next-auth';
@@ -9,24 +10,47 @@ export const authOptions: AuthOptions = {
     GitHubProvider({
       clientId: process.env.GITHUB_ID!,
       clientSecret: process.env.GITHUB_SECRET!,
+      profile(profile) {
+        return {
+          id: profile.id.toString(),
+          name: profile.name || profile.login,
+          email: profile.email,
+          image: profile.avatar_url,
+          role: 'USER', // Add a default role
+        };
+      },
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
+    async session({ session, user, token }) {
       if (session.user) {
-        // Add the user ID to the session
-        (session.user as any).id = user.id;
+        session.user.id = user?.id || token.sub;
+        session.user.role = user?.role || token.role || 'USER';
       }
       return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = user.role;
+      }
+      return token;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
   session: {
-    strategy: 'jwt', // Use JWT for session strategy
+    strategy: 'jwt',
   },
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
+  },
+  events: {
+    async signIn(message) {
+      console.log('User signed in:', message.user?.email);
+    },
+    async error(error) {
+      console.error('Auth error:', error);
+    },
   },
 };

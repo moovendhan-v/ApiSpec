@@ -1,3 +1,4 @@
+// components/index.ts
 // UI Components
 export * from './ui/button';
 
