@@ -48,3 +48,39 @@ export async function GET(
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    const documentId = params.id;
+
+    if (!documentId) {
+      return new NextResponse('Document ID is required', { status: 400 });
+    }
+
+    const { title, content, isPublic = false, password, description } = await request.json();
+
+    if (!title || !content) {
+      return new NextResponse('Title and content are required', { status: 400 });
+    }
+
+    const document = await prisma.document.update({
+      where: { id: documentId },
+      data: {
+        title,
+        content,
+        description: description || null,
+        isPublic,
+        password: isPublic ? null : password || null,
+      },
+    });
+
+    return NextResponse.json(document); 
+  } catch (error) {
+    console.error('Error updating document:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}

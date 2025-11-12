@@ -19,88 +19,44 @@ export function Navbar() {
   const { data: session } = useSession();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-black/95 backdrop-blur">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        {/* Left side - Navigation */}
+        {/* Left side - Logo and Navigation */}
         <div className="flex items-center gap-6 md:gap-10">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-2">
+            <span className="inline-block font-bold text-lg">API Specs</span>
+          </Link>
+
           {/* Desktop Navigation */}
           <nav className="hidden items-center space-x-6 text-sm font-medium md:flex">
             {session && (
               <>
                 <Link
                   href="/dashboard"
-                  className="transition-colors hover:text-white/80 text-white/60"
+                  className="transition-colors hover:text-foreground/80 text-foreground/60"
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/documents"
-                  className="transition-colors hover:text-white/80 text-white/60"
+                  className="transition-colors hover:text-foreground/80 text-foreground/60"
                 >
                   Documents
                 </Link>
                 <Link
                   href="/createdoc"
-                  className="transition-colors hover:text-white/80 text-white/60"
+                  className="transition-colors hover:text-foreground/80 text-foreground/60"
                 >
                   Create Document
                 </Link>
               </>
             )}
           </nav>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle Menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-                <div className="flex flex-col space-y-3 py-4">
-                  {session ? (
-                    <>
-                      <Link href="/dashboard" className="px-4 py-2 hover:bg-white/10 rounded-md">
-                        Dashboard
-                      </Link>
-                      <Link href="/documents" className="px-4 py-2 hover:bg-white/10 rounded-md">
-                        Documents
-                      </Link>
-                      <Link href="/createdoc" className="px-4 py-2 hover:bg-white/10 rounded-md">
-                        Create Document
-                      </Link>
-                      <Button 
-                        variant="ghost" 
-                        className="justify-start"
-                        onClick={() => signOut()}
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign out
-                      </Button>
-                    </>
-                  ) : (
-                    <Link 
-                      href="/auth/signin" 
-                      className="px-4 py-2 hover:bg-white/10 rounded-md"
-                    >
-                      Sign in
-                    </Link>
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
         </div>
 
-        {/* Right side - Logo and User Menu */}
+        {/* Right side - User Menu and Mobile Menu */}
         <div className="flex items-center gap-4">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="inline-block font-bold text-lg">API Specs</span>
-          </Link>
-
           {/* Desktop user menu */}
           <div className="hidden md:flex items-center">
             {session ? (
@@ -140,6 +96,50 @@ export function Navbar() {
                 <Link href="/auth/signin">Sign in</Link>
               </Button>
             )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle Menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                <div className="flex flex-col space-y-3 py-4">
+                  {session ? (
+                    <>
+                      <Link href="/dashboard" className="px-4 py-2 hover:bg-accent rounded-md">
+                        Dashboard
+                      </Link>
+                      <Link href="/documents" className="px-4 py-2 hover:bg-accent rounded-md">
+                        Documents
+                      </Link>
+                      <Link href="/createdoc" className="px-4 py-2 hover:bg-accent rounded-md">
+                        Create Document
+                      </Link>
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start"
+                        onClick={() => signOut()}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign out
+                      </Button>
+                    </>
+                  ) : (
+                    <Link 
+                      href="/auth/signin" 
+                      className="px-4 py-2 hover:bg-accent rounded-md"
+                    >
+                      Sign in
+                    </Link>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>

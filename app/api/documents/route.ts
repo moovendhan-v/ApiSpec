@@ -6,7 +6,6 @@ import { prisma } from '@/lib/prisma';
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
     if (!session?.user?.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
@@ -56,14 +55,30 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
     if (!session?.user?.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
+    // Get pagination parameters from URL
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination
+    const totalCount = await prisma.document.count({
+      where: {
+        OR: [
+          // { isPublic: true },
+          { userId: session.user.id },
+        ],
+      },
+    });
+
+    // Fetch documents with pagination
     const documents = await prisma.document.findMany({
       where: {
         OR: [
@@ -90,9 +105,21 @@ export async function GET() {
       orderBy: {
         createdAt: 'desc',
       },
+      skip,
+      take: limit,
     });
 
-    return NextResponse.json(documents);
+    return NextResponse.json({
+      documents,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasNextPage: page < Math.ceil(totalCount / limit),
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error('Error fetching documents:', error);
     return new NextResponse('Internal Server Error', { status: 500 });

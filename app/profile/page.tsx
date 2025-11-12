@@ -61,7 +61,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 pt-16">
       <div className="max-w-4xl mx-auto py-8 px-4">
         <Card className="bg-white/5 backdrop-blur-xl border-white/10">
           <CardHeader>
