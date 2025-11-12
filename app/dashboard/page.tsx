@@ -48,15 +48,15 @@ export default function Dashboard() {
 
   const stats = [
     { label: 'Total API Specs', value: docuemtnCount, icon: FileText, change: '+12%', trend: 'up' },
-    { label: 'Team Members', value: '8', icon: Users, change: '+2', trend: 'up' },
-    { label: 'Recent Updates', value: '15', icon: Clock, change: 'Today', trend: 'neutral' },
-    { label: 'Active Projects', value: '6', icon: TrendingUp, change: '+3', trend: 'up' },
+    // { label: 'Team Members', value: '8', icon: Users, change: '+2', trend: 'up' },
+    // { label: 'Recent Updates', value: '15', icon: Clock, change: 'Today', trend: 'neutral' },
+    // { label: 'Active Projects', value: '6', icon: TrendingUp, change: '+3', trend: 'up' },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Header */}
-      <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-16 z-40">
+      {/* <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -69,7 +69,7 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-      </header>
+      </header> */}
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Grid */}

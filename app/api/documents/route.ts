@@ -67,7 +67,7 @@ export async function GET() {
     const documents = await prisma.document.findMany({
       where: {
         OR: [
-          { isPublic: true },
+          // { isPublic: true },
           { userId: session.user.id },
         ],
       },

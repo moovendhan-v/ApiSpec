@@ -61,7 +61,7 @@ export default function DocumentsPage() {
         <div className="flex flex-col space-y-2 mb-8">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold text-white">Published API Specifications</h1>
-            <Link href="/dashboard">
+            <Link href="/createdoc">
               <Button className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50">
                 <span className="hidden sm:inline">Create New</span>
                 <span className="sm:hidden">+ New</span>
