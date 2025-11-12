@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { 
   Mail, 
-  MapPin, 
   Calendar, 
   Edit, 
   Save,
@@ -18,15 +17,11 @@ import {
   User,
   Shield,
   Bell,
-  Lock,
   Trash2,
-  Upload,
   Camera,
-  LogOut,
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -41,7 +36,6 @@ interface UserProfile {
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
-  const { theme } = useTheme();
   const [profile, setProfile] = useState<UserProfile>({} as UserProfile);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -99,42 +93,14 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pt-16 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen pt-16 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pt-16 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 -z-10">
-        <motion.div
-          className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      </div>
-
+    <div className="min-h-screen pt-16 rounded-md border bg-card text-card-foreground mb-6">
       <div className="max-w-6xl mx-auto py-8 px-4">
         {/* Header Card */}
         <motion.div
@@ -142,19 +108,19 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="bg-white/5 backdrop-blur-xl border-white/10 mb-6">
+          <Card className="mb-6">
             <CardContent className="pt-6">
               <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                 <div className="relative group">
-                  <Avatar className="h-32 w-32 ring-4 ring-blue-500/20">
+                  <Avatar className="h-32 w-32 ring-4 ring-primary/20">
                     <AvatarImage src={profile?.avatarUrl || '/api/placeholder/128/128'} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white text-3xl">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
                       {getInitials(profile?.name || '')}
                     </AvatarFallback>
                   </Avatar>
                   <Button
                     size="sm"
-                    className="absolute bottom-0 right-0 rounded-full h-10 w-10 p-0 bg-blue-600 hover:bg-blue-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute bottom-0 right-0 rounded-full h-10 w-10 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Camera className="h-4 w-4" />
                   </Button>
@@ -162,17 +128,17 @@ export default function ProfilePage() {
 
                 <div className="flex-1 text-center md:text-left">
                   <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                    <h1 className="text-3xl font-bold text-white">{profile.name}</h1>
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 w-fit mx-auto md:mx-0">
+                    <h1 className="text-3xl font-bold">{profile.name}</h1>
+                    <Badge variant="secondary" className="w-fit mx-auto md:mx-0">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       Active
                     </Badge>
                   </div>
-                  <p className="text-slate-400 mb-4">{profile.email}</p>
+                  <p className="text-muted-foreground mb-4">{profile.email}</p>
                   
-                  <div className="flex flex-wrap gap-4 text-sm text-slate-400 justify-center md:justify-start">
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground justify-center md:justify-start">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-blue-400" />
+                      <Calendar className="h-4 w-4" />
                       <span>
                         Joined {new Date(profile.createdAt).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -182,7 +148,7 @@ export default function ProfilePage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-blue-400" />
+                      <Mail className="h-4 w-4" />
                       <span>Verified Email</span>
                     </div>
                   </div>
@@ -192,7 +158,6 @@ export default function ProfilePage() {
                   variant="outline"
                   size="lg"
                   onClick={() => setIsEditing(!isEditing)}
-                  className="bg-white/5 border-white/20 hover:bg-white/10 text-white"
                 >
                   {isEditing ? (
                     <>
@@ -218,16 +183,16 @@ export default function ProfilePage() {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-white/5 border border-white/10 p-1">
-              <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600">
+            <TabsList>
+              <TabsTrigger value="profile">
                 <User className="h-4 w-4 mr-2" />
                 Profile
               </TabsTrigger>
-              <TabsTrigger value="security" className="data-[state=active]:bg-blue-600">
+              <TabsTrigger value="security">
                 <Shield className="h-4 w-4 mr-2" />
                 Security
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600">
+              <TabsTrigger value="notifications">
                 <Bell className="h-4 w-4 mr-2" />
                 Notifications
               </TabsTrigger>
@@ -235,34 +200,32 @@ export default function ProfilePage() {
 
             {/* Profile Tab */}
             <TabsContent value="profile" className="space-y-6">
-              <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="text-white">Personal Information</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle>Personal Information</CardTitle>
+                  <CardDescription>
                     Update your personal details and information
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-white">Full Name</Label>
+                      <Label htmlFor="name">Full Name</Label>
                       <Input
                         id="name"
                         value={profile.name ?? ''}
                         onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                         disabled={!isEditing}
-                        className="bg-white/5 border-white/20 text-white disabled:opacity-70 focus:border-blue-500"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-white">Email Address</Label>
+                      <Label htmlFor="email">Email Address</Label>
                       <Input
                         id="email"
                         type="email"
                         value={profile.email ?? ''}
                         disabled={true}
-                        className="bg-white/5 border-white/20 text-white disabled:opacity-70"
                       />
                     </div>
                   </div>
@@ -271,16 +234,15 @@ export default function ProfilePage() {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex gap-3 pt-4 border-t border-white/10"
+                      className="flex gap-3 pt-4 border-t"
                     >
                       <Button 
                         onClick={handleSave} 
                         disabled={isSaving}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                       >
                         {isSaving ? (
                           <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                             Saving...
                           </>
                         ) : (
@@ -294,7 +256,6 @@ export default function ProfilePage() {
                         variant="outline"
                         onClick={() => setIsEditing(false)}
                         disabled={isSaving}
-                        className="bg-white/5 border-white/20 hover:bg-white/10 text-white"
                       >
                         Cancel
                       </Button>
@@ -305,27 +266,27 @@ export default function ProfilePage() {
 
               {/* Account Stats */}
               <div className="grid md:grid-cols-3 gap-6">
-                <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+                <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-white mb-1">12</div>
-                      <div className="text-sm text-slate-400">API Specifications</div>
+                      <div className="text-3xl font-bold mb-1">12</div>
+                      <div className="text-sm text-muted-foreground">API Specifications</div>
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+                <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-white mb-1">5</div>
-                      <div className="text-sm text-slate-400">Shared Documents</div>
+                      <div className="text-3xl font-bold mb-1">5</div>
+                      <div className="text-sm text-muted-foreground">Shared Documents</div>
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+                <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-white mb-1">3</div>
-                      <div className="text-sm text-slate-400">Team Members</div>
+                      <div className="text-3xl font-bold mb-1">3</div>
+                      <div className="text-sm text-muted-foreground">Team Members</div>
                     </div>
                   </CardContent>
                 </Card>
@@ -334,55 +295,40 @@ export default function ProfilePage() {
 
             {/* Security Tab */}
             <TabsContent value="security" className="space-y-6">
-              <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="text-white">Password & Security</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle>Password & Security</CardTitle>
+                  <CardDescription>
                     Manage your password and security settings
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                          <Lock className="h-5 w-5 text-blue-400" />
+                        <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center">
+                          <Shield className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="text-white font-medium">Change Password</h3>
-                          <p className="text-sm text-slate-400">Last changed 3 months ago</p>
+                          <h3 className="font-medium">Two-Factor Authentication</h3>
+                          <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
                         </div>
                       </div>
-                      <Button variant="outline" className="bg-white/5 border-white/20 hover:bg-white/10 text-white">
-                        Update
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                          <Shield className="h-5 w-5 text-green-400" />
-                        </div>
-                        <div>
-                          <h3 className="text-white font-medium">Two-Factor Authentication</h3>
-                          <p className="text-sm text-slate-400">Add an extra layer of security</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" className="bg-white/5 border-white/20 hover:bg-white/10 text-white">
+                      <Button variant="outline">
                         Enable
                       </Button>
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-white/10">
-                    <h3 className="text-white font-medium mb-4">Active Sessions</h3>
+                  <div className="pt-6 border-t">
+                    <h3 className="font-medium mb-4">Active Sessions</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
-                          <p className="text-white text-sm">Current Session</p>
-                          <p className="text-xs text-slate-400">Chrome on MacOS • Auroville, India</p>
+                          <p className="text-sm font-medium">Current Session</p>
+                          <p className="text-xs text-muted-foreground">Chrome on MacOS • Auroville, India</p>
                         </div>
-                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Active</Badge>
+                        <Badge variant="secondary">Active</Badge>
                       </div>
                     </div>
                   </div>
@@ -390,23 +336,23 @@ export default function ProfilePage() {
               </Card>
 
               {/* Danger Zone */}
-              <Card className="bg-red-500/5 backdrop-blur-xl border-red-500/20">
+              <Card className="border-destructive/50">
                 <CardHeader>
-                  <CardTitle className="text-red-400 flex items-center gap-2">
+                  <CardTitle className="text-destructive flex items-center gap-2">
                     <AlertCircle className="h-5 w-5" />
                     Danger Zone
                   </CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardDescription>
                     Irreversible actions
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-red-500/20">
+                  <div className="flex items-center justify-between p-4 border border-destructive/50 rounded-lg">
                     <div>
-                      <h3 className="text-white font-medium">Delete Account</h3>
-                      <p className="text-sm text-slate-400">Permanently delete your account and all data</p>
+                      <h3 className="font-medium">Delete Account</h3>
+                      <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
                     </div>
-                    <Button variant="destructive" className="bg-red-600 hover:bg-red-700">
+                    <Button variant="destructive">
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
                     </Button>
@@ -417,10 +363,10 @@ export default function ProfilePage() {
 
             {/* Notifications Tab */}
             <TabsContent value="notifications" className="space-y-6">
-              <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="text-white">Notification Preferences</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle>Notification Preferences</CardTitle>
+                  <CardDescription>
                     Choose what notifications you want to receive
                   </CardDescription>
                 </CardHeader>
@@ -431,14 +377,14 @@ export default function ProfilePage() {
                     { title: 'Security Alerts', desc: 'Receive alerts about account security' },
                     { title: 'Marketing Emails', desc: 'Receive tips, updates, and special offers' },
                   ].map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-white/10">
+                    <div key={idx} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <h3 className="text-white font-medium">{item.title}</h3>
-                        <p className="text-sm text-slate-400">{item.desc}</p>
+                        <h3 className="font-medium">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground">{item.desc}</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" defaultChecked={idx < 2} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-background after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                       </label>
                     </div>
                   ))}
