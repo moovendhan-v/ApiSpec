@@ -124,7 +124,7 @@ export default function CreateDoc() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="apiSpec">OpenAPI Specification (YAML/JSON)</Label>
+                <Label htmlFor="apiSpec">OpenAPI Specification (YAML)</Label>
                 <Textarea
                   id="apiSpec"
                   placeholder="Paste your OpenAPI specification here..."

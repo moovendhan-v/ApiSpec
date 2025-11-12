@@ -16,22 +16,23 @@ export async function GET(request: Request) {
     }
 
     // Find the most recent document for the user
-    const spec = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         email: session.user.email,
       },
     });
 
-    if (!spec) {
+    if (!user) {
       return new NextResponse('User not found', { status: 404 });
     }
 
     return NextResponse.json({
-      id: spec.id,
-      name: spec.name,
-      email: spec.email,
-      createdAt: spec.createdAt,
-      updatedAt: spec.updatedAt
+      id: user.id,
+      name: user.name,
+      avatarUrl: user.image,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     });
   } catch (error) {
     console.error('Error fetching specification:', error);
