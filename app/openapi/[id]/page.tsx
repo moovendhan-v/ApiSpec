@@ -162,7 +162,7 @@ export default function OpenAPIPage() {
     };
     return (
         <SidebarProvider>
-            <div className="flex flex-col h-screen w-full dark pt-16">
+            <div className="flex flex-col h-screen w-full dark">
                 {/* Header */}
                 {/* <Header /> */}
 
