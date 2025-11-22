@@ -69,14 +69,14 @@ export default function DocumentsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background pt-16">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pt-16">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto py-8 px-4">
         <div className="flex flex-col space-y-2 mb-8">
           <div className="flex justify-between items-center">

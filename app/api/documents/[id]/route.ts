@@ -55,13 +55,40 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
     const documentId = params.id;
 
     if (!documentId) {
       return new NextResponse('Document ID is required', { status: 400 });
     }
 
-    const { title, content, isPublic = false, password, description } = await request.json();
+    // Get the user from database
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return new NextResponse('User not found', { status: 404 });
+    }
+
+    // Check if document exists and belongs to the user
+    const existingDocument = await prisma.document.findUnique({
+      where: { id: documentId },
+    });
+
+    if (!existingDocument) {
+      return new NextResponse('Document not found', { status: 404 });
+    }
+
+    if (existingDocument.userId !== user.id) {
+      return new NextResponse('Forbidden - You can only update your own documents', { status: 403 });
+    }
+
+    const { title, content, isPublic = false, password, description, status, tags } = await request.json();
 
     if (!title || !content) {
       return new NextResponse('Title and content are required', { status: 400 });
@@ -75,12 +102,64 @@ export async function PUT(
         description: description || null,
         isPublic,
         password: isPublic ? null : password || null,
+        status: status || existingDocument.status,
+        tags: tags || existingDocument.tags,
       },
     });
 
     return NextResponse.json(document); 
   } catch (error) {
     console.error('Error updating document:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const documentId = params.id;
+
+    if (!documentId) {
+      return new NextResponse('Document ID is required', { status: 400 });
+    }
+
+    // Get the user from database
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return new NextResponse('User not found', { status: 404 });
+    }
+
+    // Check if document exists and belongs to the user
+    const existingDocument = await prisma.document.findUnique({
+      where: { id: documentId },
+    });
+
+    if (!existingDocument) {
+      return new NextResponse('Document not found', { status: 404 });
+    }
+
+    if (existingDocument.userId !== user.id) {
+      return new NextResponse('Forbidden - You can only delete your own documents', { status: 403 });
+    }
+
+    await prisma.document.delete({
+      where: { id: documentId },
+    });
+
+    return NextResponse.json({ success: true, message: 'Document deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting document:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

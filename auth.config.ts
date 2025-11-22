@@ -44,9 +44,9 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub || token.id || '';
-        session.user.role = token.role || 'MEMBER';
+      if (session.user && token) {
+        session.user.id = token.sub || '';
+        session.user.role = (token.role as string) || 'MEMBER';
       }
       return session;
     },

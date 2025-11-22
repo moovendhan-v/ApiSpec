@@ -7,10 +7,10 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return new NextResponse('Unauthorized - Please sign in', { status: 401 });
     }
 
-    const { title, content, isPublic = false, password, description } = await req.json();
+    const { title, content, isPublic = false, password, description, status = 'draft', tags = [] } = await req.json();
 
     if (!title || !content) {
       return new NextResponse('Title and content are required', { status: 400 });
@@ -22,7 +22,13 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      return new NextResponse('User not found', { status: 404 });
+      return NextResponse.json(
+        { 
+          error: 'User not found in database. Please sign out and sign in again to recreate your account.',
+          code: 'USER_NOT_FOUND'
+        }, 
+        { status: 404 }
+      );
     }
 
     // Create the document
@@ -33,6 +39,9 @@ export async function POST(req: Request) {
         description: description || null,
         isPublic,
         password: isPublic ? null : password || null,
+        status,
+        tags,
+        version: 1,
         userId: user.id,
       },
       select: {
@@ -40,6 +49,9 @@ export async function POST(req: Request) {
         title: true,
         description: true,
         isPublic: true,
+        status: true,
+        tags: true,
+        version: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -62,35 +74,41 @@ export async function GET(req: Request) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
+    // Get the user from database
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return new NextResponse('User not found', { status: 404 });
+    }
+
     // Get pagination parameters from URL
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    // Get total count for pagination
+    // Get total count for pagination - only user's own documents
     const totalCount = await prisma.document.count({
       where: {
-        OR: [
-          // { isPublic: true },
-          { userId: session.user.id },
-        ],
+        userId: user.id,
       },
     });
 
-    // Fetch documents with pagination
+    // Fetch only the user's own documents with pagination
     const documents = await prisma.document.findMany({
       where: {
-        OR: [
-          // { isPublic: true },
-          { userId: session.user.id },
-        ],
+        userId: user.id,
       },
       select: {
         id: true,
         title: true,
         description: true,
         isPublic: true,
+        status: true,
+        tags: true,
+        version: true,
         createdAt: true,
         updatedAt: true,
         user: {
