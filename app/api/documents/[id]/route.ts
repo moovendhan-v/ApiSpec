@@ -121,7 +121,7 @@ export async function PATCH(
       if (member) {
         canEdit = ['OWNER', 'ADMIN', 'EDITOR'].includes(member.role) ||
           member.Workspace.WorkspacePolicy.some(
-            (p) => p.appliesTo.includes(member.role) && p.canEditDocuments
+            (p: any) => p.appliesTo.includes(member.role) && p.canEditDocuments
           );
       }
     }
@@ -233,7 +233,7 @@ export async function DELETE(
       if (member) {
         canDelete = ['OWNER', 'ADMIN'].includes(member.role) ||
           member.Workspace.WorkspacePolicy.some(
-            (p) => p.appliesTo.includes(member.role) && p.canDeleteDocuments
+            (p: any) => p.appliesTo.includes(member.role) && p.canDeleteDocuments
           );
       }
     }
