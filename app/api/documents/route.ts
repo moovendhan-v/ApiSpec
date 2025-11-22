@@ -150,7 +150,7 @@ export async function GET(req: Request) {
         version: true,
         createdAt: true,
         updatedAt: true,
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

@@ -4,6 +4,138 @@
 
 @import 'swagger-ui-react/swagger-ui.css';
 
+/* Swagger UI Dark Mode Fixes */
+.swagger-ui-wrapper {
+  @apply bg-background text-foreground;
+}
+
+.swagger-ui {
+  filter: invert(0) !important;
+}
+
+.swagger-ui .opblock-tag {
+  @apply text-foreground border-border;
+}
+
+.swagger-ui .opblock {
+  @apply bg-card border-border;
+}
+
+.swagger-ui .opblock .opblock-summary {
+  @apply bg-card border-border;
+}
+
+.swagger-ui .opblock .opblock-summary-description {
+  @apply text-foreground;
+}
+
+.swagger-ui .opblock .opblock-summary-path {
+  @apply text-foreground;
+}
+
+.swagger-ui .opblock-description-wrapper p,
+.swagger-ui .opblock-external-docs-wrapper p,
+.swagger-ui .opblock-title_normal p {
+  @apply text-foreground;
+}
+
+.swagger-ui .parameter__name {
+  @apply text-foreground;
+}
+
+.swagger-ui .parameter__type {
+  @apply text-muted-foreground;
+}
+
+.swagger-ui .response-col_status {
+  @apply text-foreground;
+}
+
+.swagger-ui .response-col_description {
+  @apply text-foreground;
+}
+
+.swagger-ui table thead tr th,
+.swagger-ui table tbody tr td {
+  @apply text-foreground border-border;
+}
+
+.swagger-ui .model-box {
+  @apply bg-card text-foreground;
+}
+
+.swagger-ui .model {
+  @apply text-foreground;
+}
+
+.swagger-ui .prop-type {
+  @apply text-primary;
+}
+
+.swagger-ui .prop-format {
+  @apply text-muted-foreground;
+}
+
+.swagger-ui section.models {
+  @apply border-border;
+}
+
+.swagger-ui section.models h4 {
+  @apply text-foreground;
+}
+
+.swagger-ui .info .title {
+  @apply text-foreground;
+}
+
+.swagger-ui .info p,
+.swagger-ui .info li {
+  @apply text-foreground;
+}
+
+.swagger-ui .scheme-container {
+  @apply bg-card;
+}
+
+.swagger-ui .btn {
+  @apply bg-primary text-primary-foreground;
+}
+
+.swagger-ui .opblock-tag-section {
+  @apply border-border;
+}
+
+.swagger-ui .markdown p,
+.swagger-ui .markdown code {
+  @apply text-foreground;
+}
+
+.swagger-ui .renderedMarkdown p {
+  @apply text-foreground;
+}
+
+.swagger-ui input[type=text],
+.swagger-ui input[type=password],
+.swagger-ui input[type=search],
+.swagger-ui input[type=email],
+.swagger-ui input[type=file],
+.swagger-ui textarea,
+.swagger-ui select {
+  @apply bg-background text-foreground border-border;
+}
+
+.swagger-ui .opblock-body pre {
+  @apply bg-muted text-foreground;
+}
+
+.swagger-ui .highlight-code {
+  @apply bg-muted;
+}
+
+.swagger-ui .microlight {
+  @apply text-foreground;
+}
+
 @layer base {
   :root {
     --background: 222.2 84% 4.9%;

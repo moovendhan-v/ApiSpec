@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     // Find the most recent document for the user
     const spec = await prisma.document.findFirst({
       where: {
-        user: { email: session.user.email },
+        User: { email: session.user.email },
         title: 'API Specification'
       },
       orderBy: {

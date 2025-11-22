@@ -25,7 +25,7 @@ export async function GET(
     const document = await prisma.document.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -160,7 +160,7 @@ export async function PATCH(
         ...(content && content !== document.content && { version: document.version + 1 }),
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

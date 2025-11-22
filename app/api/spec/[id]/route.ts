@@ -18,10 +18,10 @@ export async function GET(
     const { id } = params;
 
     // Find the document by ID for the authenticated user
-    const spec = await prisma.document.findUnique({
+    const spec = await prisma.document.findFirst({
       where: {
         id,
-        user: { email: session.user.email },
+        User: { email: session.user.email },
       },
     });
 

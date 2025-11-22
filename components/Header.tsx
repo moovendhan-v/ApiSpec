@@ -43,10 +43,10 @@ export function Header() {
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>
               <NavigationMenuItem>
-                <Link href="/dashboard" legacyBehavior passHref>
+                <Link href="/documents" legacyBehavior passHref>
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     <FileText className="mr-2 h-4 w-4" />
-                    Dashboard
+                    Documents
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>

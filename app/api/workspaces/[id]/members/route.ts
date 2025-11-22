@@ -41,7 +41,7 @@ export async function GET(
         workspaceId: params.id,
       },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

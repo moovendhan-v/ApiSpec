@@ -1,132 +1,176 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Account {
-  id                String  @id @default(cuid())
+  id                String  @id
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model User {
-  id                    String                @id @default(cuid())
-  name                  String?
-  email                 String?               @unique
-  emailVerified         DateTime?
-  image                 String?
-  role                  String                @default("MEMBER")
-  bio                   String?
-  location              String?
-  website               String?
-  accounts              Account[]
-  sessions              Session[]
-  teams                 TeamUser[]
-  samlCodes             SAMLCode[]
-  documents             Document[]
-  workspaces            WorkspaceMember[]
-  createdWorkspaces     Workspace[]           @relation("WorkspaceCreator")
-  workspaceInvitations  WorkspaceInvitation[]
-  preferences           UserPreferences?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-}
-
-model UserPreferences {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Appearance
-  theme                 String   @default("system") // light, dark, system
-  language              String   @default("en")
-  
-  // Notifications
-  emailNotifications    Boolean  @default(true)
-  pushNotifications     Boolean  @default(false)
-  weeklyDigest          Boolean  @default(true)
-  
-  // Editor Preferences
-  editorTheme           String   @default("vs-dark")
-  fontSize              Int      @default(14)
-  tabSize               Int      @default(2)
-  wordWrap              Boolean  @default(true)
-  
-  // Privacy
-  profileVisibility     String   @default("PUBLIC") // PUBLIC, PRIVATE, TEAM
-  showEmail             Boolean  @default(false)
-  showActivity          Boolean  @default(true)
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-}
-
 model Document {
-  id          String            @id @default(cuid())
-  title       String
-  content     String            @db.Text
-  description String?
-  isPublic    Boolean           @default(false)
-  password    String?
-  version     Int               @default(1)
-  status      String            @default("draft") // draft, published, archived
-  tags        String[]          @default([])
-  userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspaceId String?
-  workspace   Workspace?        @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
-  versions    DocumentVersion[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id              String            @id
+  title           String
+  content         String
+  description     String?
+  isPublic        Boolean           @default(false)
+  password        String?
+  version         Int               @default(1)
+  status          String            @default("draft")
+  tags            String[]          @default([])
+  userId          String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  workspaceId     String?
+  User            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Workspace       Workspace?        @relation(fields: [workspaceId], references: [id])
+  DocumentVersion DocumentVersion[]
 
+  @@index([createdAt])
+  @@index([isPublic])
+  @@index([status])
   @@index([userId])
   @@index([workspaceId])
-  @@index([isPublic])
-  @@index([createdAt])
-  @@index([status])
 }
 
 model DocumentVersion {
-  id          String   @id @default(cuid())
+  id          String   @id
   documentId  String
-  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   version     Int
   title       String
-  content     String   @db.Text
+  content     String
   description String?
-  changeLog   String?  @db.Text
+  changeLog   String?
   createdAt   DateTime @default(now())
+  Document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
-  @@index([documentId])
-  @@index([createdAt])
   @@unique([documentId, version])
+  @@index([createdAt])
+  @@index([documentId])
+}
+
+model MemberCustomPolicy {
+  id               String          @id
+  memberId         String
+  name             String
+  description      String?
+  statements       Json
+  resourcePatterns String[]        @default([])
+  actions          String[]        @default([])
+  conditions       Json?
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime
+  WorkspaceMember  WorkspaceMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([isActive])
+  @@index([memberId])
+}
+
+model SAMLCode {
+  id          String   @id
+  code        String   @unique
+  description String
+  metadata    Json?
+  isActive    Boolean  @default(true)
+  createdById String
+  teamId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  User        User     @relation(fields: [createdById], references: [id])
+  Team        Team?    @relation(fields: [teamId], references: [id])
+}
+
+model Session {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Team {
+  id          String     @id
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  SAMLCode    SAMLCode[]
+  TeamUser    TeamUser[]
+}
+
+model TeamUser {
+  id        String   @id
+  teamId    String
+  userId    String
+  role      String   @default("MEMBER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+}
+
+model User {
+  id                  String                @id
+  name                String?
+  email               String?               @unique
+  emailVerified       DateTime?
+  image               String?
+  role                String                @default("MEMBER")
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime
+  bio                 String?
+  location            String?
+  website             String?
+  Account             Account[]
+  Document            Document[]
+  SAMLCode            SAMLCode[]
+  Session             Session[]
+  TeamUser            TeamUser[]
+  UserPreferences     UserPreferences?
+  Workspace           Workspace[]
+  WorkspaceInvitation WorkspaceInvitation[]
+  WorkspaceMember     WorkspaceMember[]
+}
+
+model UserPreferences {
+  id                 String   @id
+  userId             String   @unique
+  theme              String   @default("system")
+  language           String   @default("en")
+  emailNotifications Boolean  @default(true)
+  pushNotifications  Boolean  @default(false)
+  weeklyDigest       Boolean  @default(true)
+  editorTheme        String   @default("vs-dark")
+  fontSize           Int      @default(14)
+  tabSize            Int      @default(2)
+  wordWrap           Boolean  @default(true)
+  profileVisibility  String   @default("PUBLIC")
+  showEmail          Boolean  @default(false)
+  showActivity       Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime
+  User               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -137,166 +181,91 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Team {
-  id          String     @id @default(cuid())
-  name        String
-  description String?
-  members     TeamUser[]
-  samlCodes   SAMLCode[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-model TeamUser {
-  id        String   @id @default(cuid())
-  teamId    String
-  userId    String
-  role      String   @default("MEMBER") // e.g., 'ADMIN', 'MEMBER'
-  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([teamId, userId])
-}
-
-model SAMLCode {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  description String
-  metadata    Json?    // Store any additional SAML metadata
-  isActive    Boolean  @default(true)
-  createdBy   User     @relation(fields: [createdById], references: [id])
-  createdById String
-  team        Team?    @relation(fields: [teamId], references: [id])
-  teamId      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-// Workspace Models
 model Workspace {
-  id          String              @id @default(cuid())
-  name        String
-  slug        String              @unique
-  description String?
-  avatar      String?
-  visibility  String              @default("PRIVATE") // PRIVATE, TEAM, PUBLIC
-  createdById String
-  createdBy   User                @relation("WorkspaceCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  members     WorkspaceMember[]
-  documents   Document[]
-  invitations WorkspaceInvitation[]
-  policies    WorkspacePolicy[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  id                  String                @id
+  name                String
+  slug                String                @unique
+  description         String?
+  avatar              String?
+  visibility          String                @default("PRIVATE")
+  createdById         String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime
+  Document            Document[]
+  User                User                  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  WorkspaceInvitation WorkspaceInvitation[]
+  WorkspaceMember     WorkspaceMember[]
+  WorkspacePolicy     WorkspacePolicy[]
 
-  @@index([slug])
   @@index([createdById])
+  @@index([slug])
   @@index([visibility])
 }
 
-model WorkspaceMember {
-  id                String                  @id @default(cuid())
-  workspaceId       String
-  workspace         Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  userId            String
-  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role              String                  @default("MEMBER") // OWNER, ADMIN, EDITOR, VIEWER, MEMBER
-  permissions       Json?                   // Custom permissions override
-  attachedPolicies  String[]                @default([]) // Array of policy IDs attached to this member
-  customPolicies    MemberCustomPolicy[]
-  joinedAt          DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
-
-  @@unique([workspaceId, userId])
-  @@index([workspaceId])
-  @@index([userId])
-  @@index([role])
-}
-
 model WorkspaceInvitation {
-  id          String    @id @default(cuid())
+  id          String    @id
   workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   email       String
   role        String    @default("MEMBER")
   token       String    @unique
   invitedById String
-  invitedBy   User      @relation(fields: [invitedById], references: [id], onDelete: Cascade)
-  status      String    @default("PENDING") // PENDING, ACCEPTED, DECLINED, EXPIRED
+  status      String    @default("PENDING")
   expiresAt   DateTime
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime
+  User        User      @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  @@index([workspaceId])
   @@index([email])
-  @@index([token])
   @@index([status])
+  @@index([token])
+  @@index([workspaceId])
+}
+
+model WorkspaceMember {
+  id                 String               @id
+  workspaceId        String
+  userId             String
+  role               String               @default("MEMBER")
+  permissions        Json?
+  joinedAt           DateTime             @default(now())
+  updatedAt          DateTime
+  attachedPolicies   String[]             @default([])
+  MemberCustomPolicy MemberCustomPolicy[]
+  User               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Workspace          Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([role])
+  @@index([userId])
+  @@index([workspaceId])
 }
 
 model WorkspacePolicy {
-  id                    String    @id @default(cuid())
-  workspaceId           String
-  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  name                  String
-  description           String?
-  type                  String    @default("MANAGED") // MANAGED, CUSTOM
-  
-  // Policy Statement (AWS IAM-like)
-  statements            Json      @default("[]") // Array of policy statements with Effect, Action, Resource, Condition
-  
-  // Legacy permissions (for backward compatibility)
-  canCreateDocuments    Boolean   @default(true)
-  canEditDocuments      Boolean   @default(true)
-  canDeleteDocuments    Boolean   @default(false)
-  canPublishDocuments   Boolean   @default(false)
-  canInviteMembers      Boolean   @default(false)
-  canRemoveMembers      Boolean   @default(false)
-  canManageSettings     Boolean   @default(false)
-  
-  // Access Control
-  requireApproval       Boolean   @default(false)
-  allowedDomains        String[]  @default([])
-  blockedDomains        String[]  @default([])
-  
-  // Applies to roles
-  appliesTo             String[]  @default(["MEMBER"])
-  
-  isActive              Boolean   @default(true)
-  isManaged             Boolean   @default(false) // True for system-managed policies
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id                  String    @id
+  workspaceId         String
+  name                String
+  description         String?
+  canCreateDocuments  Boolean   @default(true)
+  canEditDocuments    Boolean   @default(true)
+  canDeleteDocuments  Boolean   @default(false)
+  canPublishDocuments Boolean   @default(false)
+  canInviteMembers    Boolean   @default(false)
+  canRemoveMembers    Boolean   @default(false)
+  canManageSettings   Boolean   @default(false)
+  requireApproval     Boolean   @default(false)
+  allowedDomains      String[]  @default([])
+  blockedDomains      String[]  @default([])
+  appliesTo           String[]  @default(["MEMBER"])
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime
+  isManaged           Boolean   @default(false)
+  statements          Json      @default("[]")
+  type                String    @default("MANAGED")
+  Workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  @@index([workspaceId])
   @@index([isActive])
   @@index([type])
-}
-
-// Custom policies attached to individual members
-model MemberCustomPolicy {
-  id              String          @id @default(cuid())
-  memberId        String
-  member          WorkspaceMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  name            String
-  description     String?
-  
-  // Policy statements (AWS IAM-like)
-  statements      Json            // Array of { Effect, Action, Resource, Condition }
-  
-  // Resource patterns (e.g., "api-doc-*", "api-doc-v1-*")
-  resourcePatterns String[]       @default([])
-  
-  // Actions allowed
-  actions         String[]        @default([])
-  
-  // Conditions
-  conditions      Json?           // Complex conditions like IP, time, tags, etc.
-  
-  isActive        Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  @@index([memberId])
-  @@index([isActive])
+  @@index([workspaceId])
 }

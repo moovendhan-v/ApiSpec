@@ -25,7 +25,7 @@ export async function GET(
     const workspace = await prisma.workspace.findUnique({
       where: { id: params.id },
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -33,9 +33,9 @@ export async function GET(
             image: true,
           },
         },
-        members: {
+        WorkspaceMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -68,7 +68,7 @@ export async function GET(
         },
         _count: {
           select: {
-            documents: true,
+            Document: true,
             members: true,
           },
         },
@@ -138,7 +138,7 @@ export async function PATCH(
         ...(avatar !== undefined && { avatar }),
       },
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -146,9 +146,9 @@ export async function PATCH(
             image: true,
           },
         },
-        members: {
+        WorkspaceMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,

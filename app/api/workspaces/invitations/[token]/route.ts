@@ -131,7 +131,7 @@ export async function POST(
             slug: true,
           },
         },
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

@@ -22,10 +22,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Loader2, Plus, Search, Filter, MoreVertical, Edit, Trash2, Eye, History, TrendingUp, FileText } from 'lucide-react';
+import { Loader2, Plus, Search, Filter, MoreVertical, Edit, Trash2, Eye, History, TrendingUp, FileText, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { ShareDialog } from '@/components/documents/ShareDialog';
 
 interface Document {
   id: string;
@@ -38,7 +39,7 @@ interface Document {
   workspaceId: string | null;
   createdAt: string;
   updatedAt: string;
-  user: {
+  User: {
     name: string | null;
     email: string | null;
   };
@@ -438,40 +439,27 @@ export default function DocumentsPage() {
                       {formatDistanceToNow(new Date(doc.updatedAt), { addSuffix: true })}
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="w-4 h-4" />
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/documents/${doc.id}`}>
+                          <Button variant="ghost" size="icon" title="View">
+                            <Eye className="w-4 h-4" />
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/documents/${doc.id}`}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              View
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/documents/${doc.id}/edit`}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/documents/${doc.id}/versions`}>
-                              <History className="w-4 h-4 mr-2" />
-                              Version History
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(doc.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        </Link>
+                        <Link href={`/documents/${doc.id}/edit`}>
+                          <Button variant="ghost" size="icon" title="Edit">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                        <ShareDialog documentId={doc.id} documentTitle={doc.title} />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDelete(doc.id)}
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

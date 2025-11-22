@@ -23,11 +23,11 @@ export async function GET(req: Request) {
       where: {
         OR: [
           { createdById: user.id },
-          { members: { some: { userId: user.id } } },
+          { WorkspaceMember: { some: { userId: user.id } } },
         ],
       },
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -35,9 +35,9 @@ export async function GET(req: Request) {
             image: true,
           },
         },
-        members: {
+        WorkspaceMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -49,8 +49,8 @@ export async function GET(req: Request) {
         },
         _count: {
           select: {
-            documents: true,
-            members: true,
+            Document: true,
+            WorkspaceMember: true,
           },
         },
       },
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
         description,
         visibility,
         createdById: user.id,
-        members: {
+        WorkspaceMember: {
           create: {
             userId: user.id,
             role: 'OWNER',
@@ -123,7 +123,7 @@ export async function POST(req: Request) {
         },
       },
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -131,9 +131,9 @@ export async function POST(req: Request) {
             image: true,
           },
         },
-        members: {
+        WorkspaceMember: {
           include: {
-            user: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -145,7 +145,7 @@ export async function POST(req: Request) {
         },
         _count: {
           select: {
-            documents: true,
+            Document: true,
             members: true,
           },
         },

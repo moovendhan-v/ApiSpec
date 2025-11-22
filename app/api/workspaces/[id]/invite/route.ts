@@ -68,7 +68,7 @@ export async function POST(
     const existingMember = await prisma.workspaceMember.findFirst({
       where: {
         workspaceId: params.id,
-        user: {
+        User: {
           email: email,
         },
       },

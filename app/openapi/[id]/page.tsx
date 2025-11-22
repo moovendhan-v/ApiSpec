@@ -2,18 +2,22 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Layout, Code } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Endpoint, OpenAPISpec, getAllEndpoints } from '@/lib/openapi-parser';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CodePanel from '@/components/CodePanel';
 import { Header } from '@/components/Header';
 import APISidebar from '@/components/Sidebar';
 import ContentArea from '@/components/ContentArea';
 import yaml from 'js-yaml';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import dynamic from 'next/dynamic';
+
+const SwaggerUI = dynamic(() => import('swagger-ui-react'), { ssr: false });
 
 type ApiSpec = {
     id: string;
@@ -31,6 +35,7 @@ export default function OpenAPIPage() {
     const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
     const [selectedEndpoint, setSelectedEndpoint] = useState<Endpoint | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [viewMode, setViewMode] = useState<'custom' | 'swagger'>('custom');
 
     useEffect(() => {
         const fetchSpec = async () => {
@@ -163,40 +168,64 @@ export default function OpenAPIPage() {
     return (
         <SidebarProvider>
             <div className="flex flex-col h-screen w-full dark">
-                {/* Header */}
-                {/* <Header /> */}
+                {/* Header with View Toggle */}
+                <div className="border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+                    <div className="container flex h-14 items-center justify-between px-4">
+                        <h1 className="text-lg font-semibold">API Documentation</h1>
+                        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'custom' | 'swagger')}>
+                            <TabsList>
+                                <TabsTrigger value="custom" className="flex items-center gap-2">
+                                    <Layout className="w-4 h-4" />
+                                    Custom View
+                                </TabsTrigger>
+                                <TabsTrigger value="swagger" className="flex items-center gap-2">
+                                    <Code className="w-4 h-4" />
+                                    Swagger UI
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
+                </div>
 
-                {/* Three Panel Layout - All Resizable */}
-                <ResizablePanelGroup direction="horizontal" className="flex-1 bg-background">
-                    {/* Left Sidebar - API Endpoints (resizable) */}
-                    <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
-                        <APISidebar
-                            endpoints={endpoints}
-                            selectedEndpoint={selectedEndpoint}
-                            onSelectEndpoint={handleSelectEndpoint}
-                            searchQuery={searchQuery}
-                            onSearchChange={setSearchQuery}
-                        />
-                    </ResizablePanel>
+                {/* Content Area */}
+                {viewMode === 'custom' ? (
+                    <ResizablePanelGroup direction="horizontal" className="flex-1 bg-background">
+                        {/* Left Sidebar - API Endpoints (resizable) */}
+                        <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+                            <APISidebar
+                                endpoints={endpoints}
+                                selectedEndpoint={selectedEndpoint}
+                                onSelectEndpoint={handleSelectEndpoint}
+                                searchQuery={searchQuery}
+                                onSearchChange={setSearchQuery}
+                            />
+                        </ResizablePanel>
 
-                    {/* Resize Handle */}
-                    <ResizableHandle withHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
+                        {/* Resize Handle */}
+                        <ResizableHandle withHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
 
-                    {/* Middle Panel - Content Area (resizable) */}
-                    <ResizablePanel defaultSize={50} minSize={30}>
-                        <ContentArea
-                            endpoint={selectedEndpoint}
-                        />
-                    </ResizablePanel>
+                        {/* Middle Panel - Content Area (resizable) */}
+                        <ResizablePanel defaultSize={50} minSize={30}>
+                            <ContentArea
+                                endpoint={selectedEndpoint}
+                            />
+                        </ResizablePanel>
 
-                    {/* Resize Handle */}
-                    <ResizableHandle withHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
+                        {/* Resize Handle */}
+                        <ResizableHandle withHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
 
-                    {/* Right Panel - Code Panel (resizable) */}
-                    <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
-                        <CodePanel endpoint={selectedEndpoint} spec={parsedSpec!} />
-                    </ResizablePanel>
-                </ResizablePanelGroup>
+                        {/* Right Panel - Code Panel (resizable) */}
+                        <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
+                            <CodePanel endpoint={selectedEndpoint} spec={parsedSpec!} />
+                        </ResizablePanel>
+                    </ResizablePanelGroup>
+                ) : (
+                    <div className="flex-1 overflow-auto bg-background">
+                        <div className="swagger-ui-wrapper p-6">
+                            <SwaggerUI spec={parsedSpec} />
+                        </div>
+                    </div>
+                )}
             </div>
         </SidebarProvider>
     );

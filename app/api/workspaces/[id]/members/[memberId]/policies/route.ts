@@ -45,7 +45,7 @@ export async function GET(
             isActive: true,
           },
         },
-        user: {
+        User: {
           select: {
             id: true,
             name: true,

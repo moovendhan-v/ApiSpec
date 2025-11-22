@@ -7,12 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, ArrowLeft, Edit, Trash2, Share2, Download, Eye } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, ArrowLeft, Edit, Trash2, Download, Eye, History } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import dynamic from 'next/dynamic';
+import { ShareDialog } from '@/components/documents/ShareDialog';
 
 const SwaggerUI = dynamic(() => import('swagger-ui-react'), { ssr: false });
 
@@ -28,7 +30,7 @@ interface Document {
   workspaceId: string | null;
   createdAt: string;
   updatedAt: string;
-  user: {
+  User: {
     id: string;
     name: string | null;
     email: string | null;
@@ -40,8 +42,12 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [document, setDocument] = useState<Document | null>(null);
+  const [versions, setVersions] = useState<any[]>([]);
+  const [selectedVersion, setSelectedVersion] = useState<string>('current');
+  const [currentContent, setCurrentContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('preview');
+  const [activeTab, setActiveTab] = useState('swagger');
+  const [viewMode, setViewMode] = useState<'tabs' | 'openapi'>('tabs');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -57,6 +63,8 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
       if (res.ok) {
         const data = await res.json();
         setDocument(data);
+        setCurrentContent(data.content);
+        fetchVersions();
       } else if (res.status === 404) {
         toast.error('Document not found');
         router.push('/documents');
@@ -69,6 +77,30 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
       toast.error('Failed to load document');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchVersions = async () => {
+    try {
+      const res = await fetch(`/api/documents/${params.id}/versions`);
+      if (res.ok) {
+        const data = await res.json();
+        setVersions(data.versions);
+      }
+    } catch (error) {
+      console.error('Error fetching versions:', error);
+    }
+  };
+
+  const handleVersionChange = (versionId: string) => {
+    setSelectedVersion(versionId);
+    if (versionId === 'current') {
+      setCurrentContent(document?.content || '');
+    } else {
+      const version = versions.find((v) => v.id === versionId);
+      if (version) {
+        setCurrentContent(version.content);
+      }
     }
   };
 
@@ -139,6 +171,13 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
               )}
             </div>
             <div className="flex items-center gap-2">
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'tabs' | 'openapi')}>
+                <TabsList>
+                  <TabsTrigger value="tabs">Tabbed View</TabsTrigger>
+                  <TabsTrigger value="openapi">OpenAPI View</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <ShareDialog documentId={document.id} documentTitle={document.title} variant="button" />
               <Button variant="outline" size="sm" onClick={handleDownload}>
                 <Download className="w-4 h-4 mr-2" />
                 Download
@@ -156,7 +195,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
             <div className="flex items-center gap-2">
               <Badge variant="secondary">{document.status}</Badge>
               <Badge variant="outline">v{document.version}</Badge>
@@ -171,13 +210,44 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
             </div>
             <span>•</span>
             <span>
-              Created by {document.user.name || document.user.email}
+              Created by {document.User.name || document.User.email}
             </span>
             <span>•</span>
             <span>
               {new Date(document.createdAt).toLocaleDateString()}
             </span>
           </div>
+
+          {/* Version Selector */}
+          {versions.length > 0 && (
+            <div className="mt-4 flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Version:</span>
+              </div>
+              <Select value={selectedVersion} onValueChange={handleVersionChange}>
+                <SelectTrigger className="w-[300px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current">
+                    v{document.version} (Current) - {document.title}
+                  </SelectItem>
+                  {versions.map((version) => (
+                    <SelectItem key={version.id} value={version.id}>
+                      v{version.version} - {version.title}
+                      {version.changeLog && ` - ${version.changeLog.substring(0, 50)}${version.changeLog.length > 50 ? '...' : ''}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedVersion !== 'current' && (
+                <Badge variant="outline" className="text-xs">
+                  Viewing Historical Version
+                </Badge>
+              )}
+            </div>
+          )}
 
           {document.tags.length > 0 && (
             <div className="flex items-center gap-2 mt-4">
@@ -191,24 +261,45 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
         </div>
 
         {/* Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="swagger">API Docs</TabsTrigger>
-            <TabsTrigger value="preview">Code Preview</TabsTrigger>
-            <TabsTrigger value="raw">Raw Content</TabsTrigger>
-          </TabsList>
+        {viewMode === 'openapi' ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>OpenAPI Documentation</CardTitle>
+              <CardDescription>
+                View your API specification in the custom OpenAPI viewer
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href={`/openapi/${document.id}`}>
+                <Button size="lg" className="w-full">
+                  Open in OpenAPI Viewer
+                  <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                </Button>
+              </Link>
+              <p className="text-sm text-muted-foreground mt-4 text-center">
+                Opens the interactive 3-panel OpenAPI documentation viewer with custom design and Swagger UI options
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="swagger">API Docs</TabsTrigger>
+              <TabsTrigger value="preview">Code Preview</TabsTrigger>
+              <TabsTrigger value="raw">Raw Content</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="swagger" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Interactive API Documentation</CardTitle>
-                <CardDescription>
-                  Explore and test your API endpoints
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="swagger-ui-wrapper">
-                  <SwaggerUI spec={document.content} />
+            <TabsContent value="swagger" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Interactive API Documentation</CardTitle>
+                  <CardDescription>
+                    Explore and test your API endpoints
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="swagger-ui-wrapper">
+                  <SwaggerUI spec={currentContent} />
                 </div>
               </CardContent>
             </Card>
@@ -234,7 +325,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
                     }}
                     showLineNumbers
                   >
-                    {document.content}
+                    {currentContent}
                   </SyntaxHighlighter>
                 </div>
               </CardContent>
@@ -251,12 +342,13 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
               </CardHeader>
               <CardContent>
                 <pre className="p-4 bg-muted rounded-lg overflow-x-auto text-sm">
-                  {document.content}
+                  {currentContent}
                 </pre>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
+        )}
 
         {/* Metadata */}
         <Card className="mt-6">
