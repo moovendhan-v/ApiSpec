@@ -142,6 +142,7 @@ model User {
   bio                 String?
   location            String?
   website             String?
+  stripeCustomerId    String?               @unique
   Account             Account[]
   Document            Document[]
   SAMLCode            SAMLCode[]
@@ -151,6 +152,10 @@ model User {
   Workspace           Workspace[]
   WorkspaceInvitation WorkspaceInvitation[]
   WorkspaceMember     WorkspaceMember[]
+  Subscription        Subscription?
+  UsageTracking       UsageTracking[]
+  Invoice             Invoice[]
+  PaymentMethod       PaymentMethod[]
 }
 
 model UserPreferences {
@@ -268,4 +273,218 @@ model WorkspacePolicy {
   @@index([isActive])
   @@index([type])
   @@index([workspaceId])
+}
+
+// Subscription Plans
+model Plan {
+  id                    String         @id @default(cuid())
+  name                  String         @unique // FREE, PRO, TEAM, ENTERPRISE
+  displayName           String
+  description           String?
+  price                 Int            @default(0) // in cents
+  currency              String         @default("usd")
+  interval              String         @default("month") // month, year
+  stripePriceId         String?        @unique
+  stripeProductId       String?        @unique
+  
+  // Feature Limits
+  maxDocuments          Int            @default(3)
+  maxWorkspaces         Int            @default(1)
+  maxTeamMembers        Int            @default(2)
+  maxVersionHistory     Int            @default(7) // days
+  shareLinkExpiry       Int            @default(7) // days
+  
+  // Features
+  customBranding        Boolean        @default(false)
+  exportToPostman       Boolean        @default(false)
+  advancedPermissions   Boolean        @default(false)
+  ssoIntegration        Boolean        @default(false)
+  apiAccess             Boolean        @default(false)
+  prioritySupport       Boolean        @default(false)
+  dedicatedSupport      Boolean        @default(false)
+  onPremiseDeployment   Boolean        @default(false)
+  advancedAnalytics     Boolean        @default(false)
+  customIntegrations    Boolean        @default(false)
+  removeWatermark       Boolean        @default(false)
+  
+  isActive              Boolean        @default(true)
+  sortOrder             Int            @default(0)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  
+  Subscription          Subscription[]
+  
+  @@index([name])
+  @@index([isActive])
+}
+
+// User Subscriptions
+model Subscription {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  planId                String
+  
+  // Stripe Integration
+  stripeSubscriptionId  String?   @unique
+  stripeCustomerId      String?
+  stripePriceId         String?
+  stripeCurrentPeriodEnd DateTime?
+  
+  status                String    @default("active") // active, canceled, past_due, trialing, incomplete
+  cancelAtPeriodEnd     Boolean   @default(false)
+  canceledAt            DateTime?
+  
+  // Trial
+  trialStart            DateTime?
+  trialEnd              DateTime?
+  
+  // Billing
+  currentPeriodStart    DateTime  @default(now())
+  currentPeriodEnd      DateTime
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  User                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Plan                  Plan      @relation(fields: [planId], references: [id])
+  
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([stripeSubscriptionId])
+}
+
+// Usage Tracking for Limits
+model UsageTracking {
+  id                String   @id @default(cuid())
+  userId            String
+  
+  // Current Period Usage
+  documentsCount    Int      @default(0)
+  workspacesCount   Int      @default(0)
+  teamMembersCount  Int      @default(0)
+  apiCallsCount     Int      @default(0)
+  storageUsed       Int      @default(0) // in MB
+  
+  // Period
+  periodStart       DateTime @default(now())
+  periodEnd         DateTime
+  
+  // Metadata
+  lastResetAt       DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  User              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, periodStart])
+  @@index([userId])
+  @@index([periodStart])
+}
+
+// Invoices
+model Invoice {
+  id                  String   @id @default(cuid())
+  userId              String
+  
+  // Stripe Integration
+  stripeInvoiceId     String   @unique
+  stripePaymentIntentId String?
+  
+  // Invoice Details
+  number              String?  @unique
+  amount              Int      // in cents
+  currency            String   @default("usd")
+  status              String   // draft, open, paid, void, uncollectible
+  
+  // Dates
+  invoiceDate         DateTime @default(now())
+  dueDate             DateTime?
+  paidAt              DateTime?
+  
+  // PDF
+  invoicePdf          String?
+  hostedInvoiceUrl    String?
+  
+  // Metadata
+  description         String?
+  metadata            Json?
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  User                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@index([stripeInvoiceId])
+}
+
+// Payment Methods
+model PaymentMethod {
+  id                  String   @id @default(cuid())
+  userId              String
+  
+  // Stripe Integration
+  stripePaymentMethodId String @unique
+  
+  // Card Details
+  type                String   // card, bank_account
+  brand               String?  // visa, mastercard, etc.
+  last4               String?
+  expiryMonth         Int?
+  expiryYear          Int?
+  
+  // Status
+  isDefault           Boolean  @default(false)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  User                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([stripePaymentMethodId])
+}
+
+// Webhook Events Log
+model WebhookEvent {
+  id                String   @id @default(cuid())
+  
+  // Stripe Event
+  stripeEventId     String   @unique
+  type              String   // invoice.paid, customer.subscription.updated, etc.
+  
+  // Data
+  data              Json
+  
+  // Processing
+  processed         Boolean  @default(false)
+  processedAt       DateTime?
+  error             String?
+  
+  createdAt         DateTime @default(now())
+  
+  @@index([type])
+  @@index([processed])
+  @@index([stripeEventId])
+}
+
+// Feature Flags (for gradual rollout)
+model FeatureFlag {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  description       String?
+  isEnabled         Boolean  @default(false)
+  
+  // Rollout Strategy
+  rolloutPercentage Int      @default(0) // 0-100
+  allowedUserIds    String[] @default([])
+  allowedPlans      String[] @default([])
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([name])
+  @@index([isEnabled])
 }

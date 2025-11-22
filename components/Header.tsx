@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useSession, signOut } from "next-auth/react"
-import { FileText, BookOpen, Code2, Zap, Search, User, Users, Settings, Menu, LogOut } from "lucide-react"
+import { FileText, BookOpen, Code2, Zap, Search, User, Users, Settings, Menu, LogOut, CreditCard } from "lucide-react"
 
 import {
   NavigationMenu,
@@ -56,6 +56,15 @@ export function Header() {
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     <Users className="mr-2 h-4 w-4" />
                     Workspaces
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <Link href="/pricing" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <Zap className="mr-2 h-4 w-4" />
+                    Pricing
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
@@ -170,6 +179,12 @@ export function Header() {
                   <Link href="/profile/settings" className="cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/billing" className="cursor-pointer">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Billing
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
