@@ -3,20 +3,27 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth.config';
 import { prisma } from '@/lib/prisma';
 
+// GET - Get single document
 export async function GET(
-  request: Request,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const documentId = params.id;
+    if (!session?.user?.email) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
 
-    if (!documentId) {
-      return new NextResponse('Document ID is required', { status: 400 });
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!user) {
+      return new NextResponse('User not found', { status: 404 });
     }
 
     const document = await prisma.document.findUnique({
-      where: { id: documentId },
+      where: { id: params.id },
       include: {
         user: {
           select: {
@@ -33,13 +40,24 @@ export async function GET(
       return new NextResponse('Document not found', { status: 404 });
     }
 
-    // Only allow access if:
-    // 1. The document is public, OR
-    // 2. The user is authenticated and is the owner of the document
-    const isOwner = session?.user?.email && document.user.email === session.user.email;
-    
-    if (!document.isPublic && !isOwner) {
-      return new NextResponse('Unauthorized', { status: 403 });
+    // Check access
+    if (document.userId !== user.id) {
+      if (document.workspaceId) {
+        const member = await prisma.workspaceMember.findUnique({
+          where: {
+            workspaceId_userId: {
+              workspaceId: document.workspaceId,
+              userId: user.id,
+            },
+          },
+        });
+
+        if (!member) {
+          return new NextResponse('Access denied', { status: 403 });
+        }
+      } else if (!document.isPublic) {
+        return new NextResponse('Access denied', { status: 403 });
+      }
     }
 
     return NextResponse.json(document);
@@ -49,24 +67,17 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: Request,
+// PATCH - Update document
+export async function PATCH(
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
     if (!session?.user?.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const documentId = params.id;
-
-    if (!documentId) {
-      return new NextResponse('Document ID is required', { status: 400 });
-    }
-
-    // Get the user from database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -75,63 +86,109 @@ export async function PUT(
       return new NextResponse('User not found', { status: 404 });
     }
 
-    // Check if document exists and belongs to the user
-    const existingDocument = await prisma.document.findUnique({
-      where: { id: documentId },
+    const document = await prisma.document.findUnique({
+      where: { id: params.id },
     });
 
-    if (!existingDocument) {
+    if (!document) {
       return new NextResponse('Document not found', { status: 404 });
     }
 
-    if (existingDocument.userId !== user.id) {
-      return new NextResponse('Forbidden - You can only update your own documents', { status: 403 });
+    // Check if user has permission to edit
+    let canEdit = document.userId === user.id;
+
+    if (!canEdit && document.workspaceId) {
+      const member = await prisma.workspaceMember.findUnique({
+        where: {
+          workspaceId_userId: {
+            workspaceId: document.workspaceId,
+            userId: user.id,
+          },
+        },
+        include: {
+          workspace: {
+            include: {
+              policies: {
+                where: {
+                  isActive: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (member) {
+        canEdit = ['OWNER', 'ADMIN', 'EDITOR'].includes(member.role) ||
+          member.workspace.policies.some(
+            (p) => p.appliesTo.includes(member.role) && p.canEditDocuments
+          );
+      }
     }
 
-    const { title, content, isPublic = false, password, description, status, tags } = await request.json();
-
-    if (!title || !content) {
-      return new NextResponse('Title and content are required', { status: 400 });
+    if (!canEdit) {
+      return new NextResponse('No permission to edit this document', { status: 403 });
     }
 
-    const document = await prisma.document.update({
-      where: { id: documentId },
+    const { title, content, description, isPublic, status, tags, workspaceId, changeLog } = await req.json();
+
+    // Create a new version if content changed
+    if (content && content !== document.content) {
+      await prisma.documentVersion.create({
+        data: {
+          documentId: document.id,
+          version: document.version,
+          title: document.title,
+          content: document.content,
+          description: document.description,
+          changeLog: changeLog || 'Updated document',
+        },
+      });
+    }
+
+    // Update the document
+    const updatedDocument = await prisma.document.update({
+      where: { id: params.id },
       data: {
-        title,
-        content,
-        description: description || null,
-        isPublic,
-        password: isPublic ? null : password || null,
-        status: status || existingDocument.status,
-        tags: tags || existingDocument.tags,
+        ...(title !== undefined && { title }),
+        ...(content !== undefined && { content }),
+        ...(description !== undefined && { description }),
+        ...(isPublic !== undefined && { isPublic }),
+        ...(status !== undefined && { status }),
+        ...(tags !== undefined && { tags }),
+        ...(workspaceId !== undefined && { workspaceId: workspaceId || null }),
+        ...(content && content !== document.content && { version: document.version + 1 }),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(document); 
+    return NextResponse.json(updatedDocument);
   } catch (error) {
     console.error('Error updating document:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
+// DELETE - Delete document
 export async function DELETE(
-  request: Request,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
     if (!session?.user?.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const documentId = params.id;
-
-    if (!documentId) {
-      return new NextResponse('Document ID is required', { status: 400 });
-    }
-
-    // Get the user from database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -140,24 +197,55 @@ export async function DELETE(
       return new NextResponse('User not found', { status: 404 });
     }
 
-    // Check if document exists and belongs to the user
-    const existingDocument = await prisma.document.findUnique({
-      where: { id: documentId },
+    const document = await prisma.document.findUnique({
+      where: { id: params.id },
     });
 
-    if (!existingDocument) {
+    if (!document) {
       return new NextResponse('Document not found', { status: 404 });
     }
 
-    if (existingDocument.userId !== user.id) {
-      return new NextResponse('Forbidden - You can only delete your own documents', { status: 403 });
+    // Check if user has permission to delete
+    let canDelete = document.userId === user.id;
+
+    if (!canDelete && document.workspaceId) {
+      const member = await prisma.workspaceMember.findUnique({
+        where: {
+          workspaceId_userId: {
+            workspaceId: document.workspaceId,
+            userId: user.id,
+          },
+        },
+        include: {
+          workspace: {
+            include: {
+              policies: {
+                where: {
+                  isActive: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (member) {
+        canDelete = ['OWNER', 'ADMIN'].includes(member.role) ||
+          member.workspace.policies.some(
+            (p) => p.appliesTo.includes(member.role) && p.canDeleteDocuments
+          );
+      }
+    }
+
+    if (!canDelete) {
+      return new NextResponse('No permission to delete this document', { status: 403 });
     }
 
     await prisma.document.delete({
-      where: { id: documentId },
+      where: { id: params.id },
     });
 
-    return NextResponse.json({ success: true, message: 'Document deleted successfully' });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting document:', error);
     return new NextResponse('Internal Server Error', { status: 500 });

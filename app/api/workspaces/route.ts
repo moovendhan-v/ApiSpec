@@ -143,6 +143,12 @@ export async function POST(req: Request) {
             },
           },
         },
+        _count: {
+          select: {
+            documents: true,
+            members: true,
+          },
+        },
       },
     });
 

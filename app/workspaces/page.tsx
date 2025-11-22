@@ -195,11 +195,11 @@ export default function WorkspacesPage() {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
-                        <span>{workspace._count.members}</span>
+                        <span>{workspace._count?.members || 0}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <FileText className="w-4 h-4" />
-                        <span>{workspace._count.documents}</span>
+                        <span>{workspace._count?.documents || 0}</span>
                       </div>
                     </div>
                     <span className="text-xs px-2 py-1 rounded-full bg-muted">
