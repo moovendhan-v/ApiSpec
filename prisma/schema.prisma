@@ -164,15 +164,17 @@ model Workspace {
 }
 
 model WorkspaceMember {
-  id          String    @id @default(cuid())
-  workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role        String    @default("MEMBER") // OWNER, ADMIN, EDITOR, VIEWER, MEMBER
-  permissions Json?     // Custom permissions override
-  joinedAt    DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                String                  @id @default(cuid())
+  workspaceId       String
+  workspace         Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role              String                  @default("MEMBER") // OWNER, ADMIN, EDITOR, VIEWER, MEMBER
+  permissions       Json?                   // Custom permissions override
+  attachedPolicies  String[]                @default([]) // Array of policy IDs attached to this member
+  customPolicies    MemberCustomPolicy[]
+  joinedAt          DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
 
   @@unique([workspaceId, userId])
   @@index([workspaceId])
@@ -206,14 +208,16 @@ model WorkspacePolicy {
   workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   name                  String
   description           String?
+  type                  String    @default("MANAGED") // MANAGED, CUSTOM
   
-  // Document Permissions
+  // Policy Statement (AWS IAM-like)
+  statements            Json      @default("[]") // Array of policy statements with Effect, Action, Resource, Condition
+  
+  // Legacy permissions (for backward compatibility)
   canCreateDocuments    Boolean   @default(true)
   canEditDocuments      Boolean   @default(true)
   canDeleteDocuments    Boolean   @default(false)
   canPublishDocuments   Boolean   @default(false)
-  
-  // Workspace Permissions
   canInviteMembers      Boolean   @default(false)
   canRemoveMembers      Boolean   @default(false)
   canManageSettings     Boolean   @default(false)
@@ -224,12 +228,42 @@ model WorkspacePolicy {
   blockedDomains        String[]  @default([])
   
   // Applies to roles
-  appliesTo             String[]  @default(["MEMBER"]) // Array of roles this policy applies to
+  appliesTo             String[]  @default(["MEMBER"])
   
   isActive              Boolean   @default(true)
+  isManaged             Boolean   @default(false) // True for system-managed policies
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
   @@index([workspaceId])
+  @@index([isActive])
+  @@index([type])
+}
+
+// Custom policies attached to individual members
+model MemberCustomPolicy {
+  id              String          @id @default(cuid())
+  memberId        String
+  member          WorkspaceMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  
+  // Policy statements (AWS IAM-like)
+  statements      Json            // Array of { Effect, Action, Resource, Condition }
+  
+  // Resource patterns (e.g., "api-doc-*", "api-doc-v1-*")
+  resourcePatterns String[]       @default([])
+  
+  // Actions allowed
+  actions         String[]        @default([])
+  
+  // Conditions
+  conditions      Json?           // Complex conditions like IP, time, tags, etc.
+  
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([memberId])
   @@index([isActive])
 }

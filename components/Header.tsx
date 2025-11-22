@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { FileText, BookOpen, Code2, Zap, Search, User, Users, Settings, LogOut, Menu } from "lucide-react"
+import { FileText, BookOpen, Code2, Zap, Search, User, Users, Settings, Menu, LogOut } from "lucide-react"
 
 import {
   NavigationMenu,

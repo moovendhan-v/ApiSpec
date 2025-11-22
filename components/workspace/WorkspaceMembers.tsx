@@ -15,9 +15,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserPlus, MoreVertical, Trash2, Shield, Loader2 } from 'lucide-react';
+import { UserPlus, MoreVertical, Trash2, Shield, Loader2, Key, Copy, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import MemberPolicies from './MemberPolicies';
 
 interface Member {
   id: string;
@@ -48,6 +49,11 @@ export default function WorkspaceMembers({
     email: '',
     role: 'MEMBER',
   });
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [showPoliciesDialog, setShowPoliciesDialog] = useState(false);
+
+  const [invitationLink, setInvitationLink] = useState<string>('');
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,9 +67,12 @@ export default function WorkspaceMembers({
       });
 
       if (res.ok) {
-        toast.success('Invitation sent successfully');
+        const data = await res.json();
+        const link = `${window.location.origin}/join/${data.invitation.token}`;
+        setInvitationLink(link);
+        setShowLinkDialog(true);
         setInviteDialogOpen(false);
-        setInviteData({ email: '', role: 'MEMBER' });
+        toast.success('Invitation created successfully');
         onRefresh();
       } else {
         const error = await res.text();
@@ -75,6 +84,11 @@ export default function WorkspaceMembers({
     } finally {
       setInviting(false);
     }
+  };
+
+  const copyInvitationLink = () => {
+    navigator.clipboard.writeText(invitationLink);
+    toast.success('Invitation link copied to clipboard!');
   };
 
   const handleRemoveMember = async (memberId: string) => {
@@ -224,6 +238,17 @@ export default function WorkspaceMembers({
                 <Badge className={getRoleBadgeColor(member.role)}>
                   {member.role}
                 </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedMember(member);
+                    setShowPoliciesDialog(true);
+                  }}
+                >
+                  <Key className="w-4 h-4 mr-2" />
+                  Manage Policies
+                </Button>
                 {member.role !== 'OWNER' && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -259,6 +284,61 @@ export default function WorkspaceMembers({
           </Card>
         ))}
       </div>
+
+      {/* Member Policies Dialog */}
+      <Dialog open={showPoliciesDialog} onOpenChange={setShowPoliciesDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedMember && (
+            <MemberPolicies
+              workspaceId={workspaceId}
+              memberId={selectedMember.id}
+              memberName={selectedMember.user.name || selectedMember.user.email || 'Unknown'}
+              onClose={() => {
+                setShowPoliciesDialog(false);
+                setSelectedMember(null);
+                onRefresh();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Shareable Link Dialog */}
+      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invitation Link Created</DialogTitle>
+            <DialogDescription>
+              Share this link with {inviteData.email} to join the workspace
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+              <LinkIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <code className="flex-1 text-sm break-all">{invitationLink}</code>
+              <Button size="sm" variant="outline" onClick={copyInvitationLink}>
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p>• This link will expire in 7 days</p>
+              <p>• The user must sign in with <strong>{inviteData.email}</strong></p>
+              <p>• They will join as <strong>{inviteData.role}</strong></p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setShowLinkDialog(false);
+                setInvitationLink('');
+                setInviteData({ email: '', role: 'MEMBER' });
+              }}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
