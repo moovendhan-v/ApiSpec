@@ -1,22 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 
 export default function SuccessPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
-
-  useEffect(() => {
-    // Optional: Verify the session with your backend
-    if (sessionId) {
-      console.log('Checkout session completed:', sessionId);
-    }
-  }, [sessionId]);
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -42,12 +32,22 @@ export default function SuccessPage() {
               </ul>
             </div>
 
-            <div className="flex gap-4">
-              <Button onClick={() => router.push('/dashboard')} className="flex-1">
-                Go to Dashboard
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button onClick={() => router.push('/documents')} className="flex-1">
+                Go to Documents
               </Button>
               <Button onClick={() => router.push('/billing')} variant="outline" className="flex-1">
                 View Billing
+              </Button>
+            </div>
+            
+            <div className="text-center pt-4">
+              <Button 
+                variant="link" 
+                onClick={() => router.push('/pricing')}
+                className="text-sm text-muted-foreground"
+              >
+                ← Back to Pricing
               </Button>
             </div>
           </CardContent>

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, X, Zap } from 'lucide-react';
+import * as React from 'react';
+import { Check, X, Zap, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
@@ -72,11 +73,37 @@ export default function PricingPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const [loading, setLoading] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState(true);
   
   // Check if Stripe is configured
   const isStripeConfigured = 
     process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO_MONTHLY && 
     process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO_MONTHLY !== 'price_your_pro_monthly_id';
+
+  // Fetch current plan
+  React.useEffect(() => {
+    const fetchCurrentPlan = async () => {
+      if (!session?.user?.id) {
+        setLoadingPlan(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/subscription/status');
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentPlan(data.plan?.name || 'FREE');
+        }
+      } catch (error) {
+        console.error('Failed to fetch plan:', error);
+      } finally {
+        setLoadingPlan(false);
+      }
+    };
+
+    fetchCurrentPlan();
+  }, [session]);
 
   const handleSubscribe = async (priceId: string | null | undefined, planName: string) => {
     if (!session) {
@@ -134,6 +161,18 @@ export default function PricingPage() {
             Choose the plan that's right for you
           </p>
           
+          {currentPlan && currentPlan !== 'FREE' && (
+            <div className="mt-4">
+              <Button
+                variant="link"
+                onClick={() => router.push('/billing')}
+                className="text-primary"
+              >
+                Manage your subscription →
+              </Button>
+            </div>
+          )}
+          
           {!isStripeConfigured && (
             <div className="mt-6 max-w-2xl mx-auto">
               <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
@@ -148,21 +187,33 @@ export default function PricingPage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => (
-            <Card
-              key={plan.name}
-              className={`p-8 relative ${
-                plan.popular ? 'border-primary border-2 shadow-lg' : ''
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-                    <Zap className="w-4 h-4" />
-                    MOST POPULAR
+          {plans.map((plan) => {
+            const isCurrentPlan = currentPlan === plan.name;
+            
+            return (
+              <Card
+                key={plan.name}
+                className={`p-8 relative ${
+                  plan.popular ? 'border-primary border-2 shadow-lg' : ''
+                } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
+              >
+                {plan.popular && !isCurrentPlan && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                      <Zap className="w-4 h-4" />
+                      MOST POPULAR
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+                
+                {isCurrentPlan && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <div className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-4 h-4" />
+                      CURRENT PLAN
+                    </div>
+                  </div>
+                )}
 
               <div className="mb-6">
                 <h3 className="text-2xl font-bold mb-2">{plan.displayName}</h3>
@@ -177,11 +228,15 @@ export default function PricingPage() {
 
               <Button
                 className="w-full mb-6"
-                variant={plan.popular ? 'default' : 'outline'}
+                variant={isCurrentPlan ? 'secondary' : plan.popular ? 'default' : 'outline'}
                 onClick={() => handleSubscribe(plan.priceId, plan.name)}
-                disabled={loading === plan.name}
+                disabled={loading === plan.name || isCurrentPlan || loadingPlan}
               >
-                {loading === plan.name
+                {loadingPlan
+                  ? 'Loading...'
+                  : isCurrentPlan
+                  ? 'Current Plan'
+                  : loading === plan.name
                   ? 'Loading...'
                   : plan.price === 0
                   ? 'Get Started'
@@ -207,7 +262,8 @@ export default function PricingPage() {
                 ))}
               </ul>
             </Card>
-          ))}
+          );
+          })}
         </div>
 
         <div className="mt-16 text-center">
