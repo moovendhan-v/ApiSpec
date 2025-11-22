@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { getStripe } from '@/lib/stripe-client';
 
 const plans = [
   {
@@ -87,13 +86,7 @@ export default function PricingPage() {
 
     if (!priceId || priceId === 'price_your_pro_monthly_id' || priceId === 'price_your_team_monthly_id') {
       alert(
-        '⚠️ Stripe Price IDs not configured yet!\n\n' +
-        'To enable payments:\n' +
-        '1. Create products in Stripe Dashboard\n' +
-        '2. Copy the Price IDs (start with "price_")\n' +
-        '3. Add them to your .env file\n' +
-        '4. Restart the dev server\n\n' +
-        'See SETUP_COMPLETE.md for detailed instructions.'
+        '⚠️ Stripe Price IDs not configured yet! please contact admin.'
       );
       return;
     }
@@ -118,9 +111,11 @@ export default function PricingPage() {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      const stripe = await getStripe();
-      if (stripe && data.sessionId) {
-        await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      // Use the new method: redirect to the checkout URL directly
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
       }
     } catch (error) {
       console.error('Subscription error:', error);
