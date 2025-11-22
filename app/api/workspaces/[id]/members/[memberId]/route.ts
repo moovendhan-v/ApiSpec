@@ -119,7 +119,7 @@ export async function DELETE(
 
     const canRemove = ['OWNER', 'ADMIN'].includes(currentMember.role) ||
       currentMember.Workspace.WorkspacePolicy.some(
-        (p) => p.appliesTo.includes(currentMember.role) && p.canRemoveMembers
+        (p: any) => p.appliesTo.includes(currentMember.role) && p.canRemoveMembers
       );
 
     if (!canRemove) {

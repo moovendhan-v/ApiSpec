@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       // Check if user has permission to create documents
       const canCreate = ['OWNER', 'ADMIN', 'EDITOR'].includes(member.role) ||
         member.Workspace.WorkspacePolicy.some(
-          (p) => p.appliesTo.includes(member.role) && p.canCreateDocuments
+          (p: any) => p.appliesTo.includes(member.role) && p.canCreateDocuments
         );
 
       if (!canCreate) {
