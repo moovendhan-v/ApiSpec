@@ -37,19 +37,22 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  role          String    @default("MEMBER") // Added role field with default value
-  accounts      Account[]
-  sessions      Session[]
-  teams         TeamUser[]
-  samlCodes     SAMLCode[]
-  documents     Document[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                    String                @id @default(cuid())
+  name                  String?
+  email                 String?               @unique
+  emailVerified         DateTime?
+  image                 String?
+  role                  String                @default("MEMBER")
+  accounts              Account[]
+  sessions              Session[]
+  teams                 TeamUser[]
+  samlCodes             SAMLCode[]
+  documents             Document[]
+  workspaces            WorkspaceMember[]
+  createdWorkspaces     Workspace[]           @relation("WorkspaceCreator")
+  workspaceInvitations  WorkspaceInvitation[]
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
 }
 
 model Document {
@@ -64,11 +67,14 @@ model Document {
   tags        String[]          @default([])
   userId      String
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String?
+  workspace   Workspace?        @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   versions    DocumentVersion[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
   @@index([userId])
+  @@index([workspaceId])
   @@index([isPublic])
   @@index([createdAt])
   @@index([status])
@@ -133,4 +139,97 @@ model SAMLCode {
   teamId      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Workspace Models
+model Workspace {
+  id          String              @id @default(cuid())
+  name        String
+  slug        String              @unique
+  description String?
+  avatar      String?
+  visibility  String              @default("PRIVATE") // PRIVATE, TEAM, PUBLIC
+  createdById String
+  createdBy   User                @relation("WorkspaceCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members     WorkspaceMember[]
+  documents   Document[]
+  invitations WorkspaceInvitation[]
+  policies    WorkspacePolicy[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([slug])
+  @@index([createdById])
+  @@index([visibility])
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        String    @default("MEMBER") // OWNER, ADMIN, EDITOR, VIEWER, MEMBER
+  permissions Json?     // Custom permissions override
+  joinedAt    DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([role])
+}
+
+model WorkspaceInvitation {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  email       String
+  role        String    @default("MEMBER")
+  token       String    @unique
+  invitedById String
+  invitedBy   User      @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  status      String    @default("PENDING") // PENDING, ACCEPTED, DECLINED, EXPIRED
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@index([email])
+  @@index([token])
+  @@index([status])
+}
+
+model WorkspacePolicy {
+  id                    String    @id @default(cuid())
+  workspaceId           String
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name                  String
+  description           String?
+  
+  // Document Permissions
+  canCreateDocuments    Boolean   @default(true)
+  canEditDocuments      Boolean   @default(true)
+  canDeleteDocuments    Boolean   @default(false)
+  canPublishDocuments   Boolean   @default(false)
+  
+  // Workspace Permissions
+  canInviteMembers      Boolean   @default(false)
+  canRemoveMembers      Boolean   @default(false)
+  canManageSettings     Boolean   @default(false)
+  
+  // Access Control
+  requireApproval       Boolean   @default(false)
+  allowedDomains        String[]  @default([])
+  blockedDomains        String[]  @default([])
+  
+  // Applies to roles
+  appliesTo             String[]  @default(["MEMBER"]) // Array of roles this policy applies to
+  
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@index([isActive])
 }

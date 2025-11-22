@@ -2,33 +2,64 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from "sonner"
 import { Icons } from '@/components/icons';
 import { useApiStore } from '@/lib/store';
 
+interface Workspace {
+  id: string;
+  name: string;
+}
+
 export default function CreateDoc() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [apiSpec, setApiSpec] = useState('');
   const [docTitle, setDocTitle] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [password, setPassword] = useState('');
+  const [workspaceId, setWorkspaceId] = useState<string>('');
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [loadingWorkspaces, setLoadingWorkspaces] = useState(true);
 
   const { addDocument, documents } = useApiStore();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
+    } else if (status === 'authenticated') {
+      fetchWorkspaces();
+      // Check if workspace ID is in URL params
+      const workspaceParam = searchParams.get('workspace');
+      if (workspaceParam) {
+        setWorkspaceId(workspaceParam);
+      }
     }
-  }, [status, router]);
+  }, [status, router, searchParams]);
+
+  const fetchWorkspaces = async () => {
+    try {
+      const res = await fetch('/api/workspaces');
+      if (res.ok) {
+        const data = await res.json();
+        setWorkspaces(data.workspaces);
+      }
+    } catch (error) {
+      console.error('Error fetching workspaces:', error);
+    } finally {
+      setLoadingWorkspaces(false);
+    }
+  };
 
   const handlePublish = async () => {
     if (!apiSpec.trim() || !docTitle.trim()) {
@@ -52,6 +83,7 @@ export default function CreateDoc() {
           isPublic,
           password: isPublic ? undefined : password,
           description: `API Documentation for ${docTitle}`,
+          workspaceId: workspaceId || undefined,
         }),
       });
 
@@ -73,11 +105,12 @@ export default function CreateDoc() {
         description: 'Your API documentation has been published successfully!',
       });
 
-      // Reset form
-      setApiSpec('');
-      setDocTitle('');
-      setPassword('');
-      setIsPublic(true);
+      // Redirect to workspace or documents page
+      if (workspaceId) {
+        router.push(`/workspaces/${workspaceId}`);
+      } else {
+        router.push('/documents');
+      }
     } catch (error) {
       console.error('Error publishing document:', error);
       toast("Error", {
@@ -121,6 +154,26 @@ export default function CreateDoc() {
                   value={docTitle}
                   onChange={(e) => setDocTitle(e.target.value)}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="workspace">Workspace (Optional)</Label>
+                <Select value={workspaceId || 'none'} onValueChange={(value) => setWorkspaceId(value === 'none' ? '' : value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a workspace or leave empty for personal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Personal (No Workspace)</SelectItem>
+                    {workspaces.map((workspace) => (
+                      <SelectItem key={workspace.id} value={workspace.id}>
+                        {workspace.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Assign this document to a workspace for team collaboration
+                </p>
               </div>
 
               <div className="space-y-2">

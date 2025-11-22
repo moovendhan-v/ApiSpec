@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return new NextResponse('Unauthorized - Please sign in', { status: 401 });
     }
 
-    const { title, content, isPublic = false, password, description, status = 'draft', tags = [] } = await req.json();
+    const { title, content, isPublic = false, password, description, status = 'draft', tags = [], workspaceId } = await req.json();
 
     if (!title || !content) {
       return new NextResponse('Title and content are required', { status: 400 });
@@ -31,6 +31,43 @@ export async function POST(req: Request) {
       );
     }
 
+    // If workspaceId is provided, verify user has access
+    if (workspaceId) {
+      const member = await prisma.workspaceMember.findUnique({
+        where: {
+          workspaceId_userId: {
+            workspaceId,
+            userId: user.id,
+          },
+        },
+        include: {
+          workspace: {
+            include: {
+              policies: {
+                where: {
+                  isActive: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!member) {
+        return new NextResponse('Access denied to workspace', { status: 403 });
+      }
+
+      // Check if user has permission to create documents
+      const canCreate = ['OWNER', 'ADMIN', 'EDITOR'].includes(member.role) ||
+        member.workspace.policies.some(
+          (p) => p.appliesTo.includes(member.role) && p.canCreateDocuments
+        );
+
+      if (!canCreate) {
+        return new NextResponse('No permission to create documents in this workspace', { status: 403 });
+      }
+    }
+
     // Create the document
     const document = await prisma.document.create({
       data: {
@@ -43,6 +80,7 @@ export async function POST(req: Request) {
         tags,
         version: 1,
         userId: user.id,
+        workspaceId: workspaceId || null,
       },
       select: {
         id: true,
@@ -52,6 +90,7 @@ export async function POST(req: Request) {
         status: true,
         tags: true,
         version: true,
+        workspaceId: true,
         createdAt: true,
         updatedAt: true,
       },

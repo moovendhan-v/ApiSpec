@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { FileText, BookOpen, Code2, Zap, Search, User, Settings, LogOut, Menu } from "lucide-react"
+import { FileText, BookOpen, Code2, Zap, Search, User, Users, Settings, LogOut, Menu } from "lucide-react"
 
 import {
   NavigationMenu,
@@ -45,6 +45,15 @@ export function Header() {
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     <FileText className="mr-2 h-4 w-4" />
                     Dashboard
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <Link href="/workspaces" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <Users className="mr-2 h-4 w-4" />
+                    Workspaces
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
