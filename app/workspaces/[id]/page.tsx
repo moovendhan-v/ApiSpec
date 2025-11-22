@@ -12,6 +12,9 @@ import Link from 'next/link';
 import WorkspaceDocuments from '@/components/workspace/WorkspaceDocuments';
 import WorkspaceMembers from '@/components/workspace/WorkspaceMembers';
 import WorkspaceSettings from '@/components/workspace/WorkspaceSettings';
+import { useWorkspace } from '@/lib/hooks/use-workspaces';
+import { useWorkspaceDocuments } from '@/lib/hooks/use-documents';
+import { useWorkspaceMembers } from '@/lib/hooks/use-members';
 
 interface Workspace {
   id: string;
@@ -37,37 +40,34 @@ interface Workspace {
 export default function WorkspacePage({ params }: { params: { id: string } }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('documents');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Use Zustand stores with caching
+  const { workspace, isLoading: loading, error } = useWorkspace(params.id, refreshKey > 0);
+  const { documents } = useWorkspaceDocuments(params.id, refreshKey > 0);
+  const { members } = useWorkspaceMembers(params.id, refreshKey > 0);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
-    } else if (status === 'authenticated') {
-      fetchWorkspace();
     }
-  }, [status, router, params.id]);
+  }, [status, router]);
 
-  const fetchWorkspace = async () => {
-    try {
-      const res = await fetch(`/api/workspaces/${params.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setWorkspace(data.workspace);
-      } else if (res.status === 403) {
+  useEffect(() => {
+    if (error) {
+      if (error.includes('Access denied')) {
         toast.error('Access denied');
         router.push('/workspaces');
-      } else if (res.status === 404) {
+      } else if (error.includes('not found')) {
         toast.error('Workspace not found');
         router.push('/workspaces');
       }
-    } catch (error) {
-      console.error('Error fetching workspace:', error);
-      toast.error('Failed to load workspace');
-    } finally {
-      setLoading(false);
     }
+  }, [error, router]);
+
+  const handleRefresh = () => {
+    setRefreshKey((prev) => prev + 1);
   };
 
   if (loading) {
@@ -119,23 +119,23 @@ export default function WorkspacePage({ params }: { params: { id: string } }) {
         <TabsContent value="documents" className="mt-6">
           <WorkspaceDocuments
             workspaceId={workspace.id}
-            documents={workspace.documents}
-            onRefresh={fetchWorkspace}
+            documents={documents}
+            onRefresh={handleRefresh}
           />
         </TabsContent>
 
         <TabsContent value="members" className="mt-6">
           <WorkspaceMembers
             workspaceId={workspace.id}
-            members={workspace.members}
-            onRefresh={fetchWorkspace}
+            members={members}
+            onRefresh={handleRefresh}
           />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6">
           <WorkspaceSettings
             workspace={workspace}
-            onRefresh={fetchWorkspace}
+            onRefresh={handleRefresh}
           />
         </TabsContent>
       </Tabs>

@@ -13,6 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Users, FileText, Settings, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useWorkspaces } from '@/lib/hooks/use-workspaces';
+import { useWorkspaceStore } from '@/lib/stores/workspace-store';
 
 interface Workspace {
   id: string;
@@ -30,8 +32,6 @@ interface Workspace {
 export default function WorkspacesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -40,28 +40,15 @@ export default function WorkspacesPage() {
     visibility: 'PRIVATE',
   });
 
+  // Use Zustand store with caching
+  const { workspaces, isLoading: loading, error } = useWorkspaces();
+  const { addWorkspace } = useWorkspaceStore();
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
-    } else if (status === 'authenticated') {
-      fetchWorkspaces();
     }
   }, [status, router]);
-
-  const fetchWorkspaces = async () => {
-    try {
-      const res = await fetch('/api/workspaces');
-      if (res.ok) {
-        const data = await res.json();
-        setWorkspaces(data.workspaces);
-      }
-    } catch (error) {
-      console.error('Error fetching workspaces:', error);
-      toast.error('Failed to load workspaces');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +63,7 @@ export default function WorkspacesPage() {
 
       if (res.ok) {
         const data = await res.json();
+        addWorkspace(data.workspace); // Add to store
         toast.success('Workspace created successfully');
         setDialogOpen(false);
         setFormData({ name: '', description: '', visibility: 'PRIVATE' });

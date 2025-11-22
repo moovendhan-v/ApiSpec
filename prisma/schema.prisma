@@ -43,6 +43,9 @@ model User {
   emailVerified         DateTime?
   image                 String?
   role                  String                @default("MEMBER")
+  bio                   String?
+  location              String?
+  website               String?
   accounts              Account[]
   sessions              Session[]
   teams                 TeamUser[]
@@ -51,8 +54,38 @@ model User {
   workspaces            WorkspaceMember[]
   createdWorkspaces     Workspace[]           @relation("WorkspaceCreator")
   workspaceInvitations  WorkspaceInvitation[]
+  preferences           UserPreferences?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
+}
+
+model UserPreferences {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Appearance
+  theme                 String   @default("system") // light, dark, system
+  language              String   @default("en")
+  
+  // Notifications
+  emailNotifications    Boolean  @default(true)
+  pushNotifications     Boolean  @default(false)
+  weeklyDigest          Boolean  @default(true)
+  
+  // Editor Preferences
+  editorTheme           String   @default("vs-dark")
+  fontSize              Int      @default(14)
+  tabSize               Int      @default(2)
+  wordWrap              Boolean  @default(true)
+  
+  // Privacy
+  profileVisibility     String   @default("PUBLIC") // PUBLIC, PRIVATE, TEAM
+  showEmail             Boolean  @default(false)
+  showActivity          Boolean  @default(true)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 model Document {
