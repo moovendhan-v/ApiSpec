@@ -96,23 +96,29 @@ export async function POST(req: Request) {
 
     const workspace = await prisma.workspace.create({
       data: {
+        id: `ws-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name,
         slug,
         description,
         visibility,
         createdById: user.id,
+        updatedAt: new Date(),
         WorkspaceMember: {
           create: {
+            id: `member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             userId: user.id,
             role: 'OWNER',
+            updatedAt: new Date(),
           },
         },
-        policies: {
+        WorkspacePolicy: {
           create: {
+            id: `policy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name: 'Default Policy',
             description: 'Default workspace policy',
             canCreateDocuments: true,
             canEditDocuments: true,
+            updatedAt: new Date(),
             canDeleteDocuments: false,
             canPublishDocuments: false,
             canInviteMembers: false,
@@ -146,7 +152,7 @@ export async function POST(req: Request) {
         _count: {
           select: {
             Document: true,
-            members: true,
+            WorkspaceMember: true,
           },
         },
       },

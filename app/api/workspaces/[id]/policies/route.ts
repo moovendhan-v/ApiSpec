@@ -107,6 +107,7 @@ export async function POST(
 
     const policy = await prisma.workspacePolicy.create({
       data: {
+        id: `policy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         workspaceId: params.id,
         name,
         description,
@@ -121,6 +122,7 @@ export async function POST(
         allowedDomains: allowedDomains ?? [],
         blockedDomains: blockedDomains ?? [],
         appliesTo: appliesTo ?? ['MEMBER'],
+        updatedAt: new Date(),
       },
     });
 

@@ -40,7 +40,7 @@ export async function GET(
     const member = await prisma.workspaceMember.findUnique({
       where: { id: params.memberId },
       include: {
-        customPolicies: {
+        MemberCustomPolicy: {
           where: {
             isActive: true,
           },
@@ -71,7 +71,7 @@ export async function GET(
     return NextResponse.json({
       member,
       attachedPolicies: member.attachedPolicies,
-      customPolicies: member.customPolicies,
+      customPolicies: member.MemberCustomPolicy,
       availablePolicies: workspacePolicies,
     });
   } catch (error) {
@@ -142,6 +142,7 @@ export async function POST(
       // Create custom policy
       const policy = await prisma.memberCustomPolicy.create({
         data: {
+          id: `policy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           memberId: params.memberId,
           name: customPolicy.name,
           description: customPolicy.description,
@@ -149,6 +150,7 @@ export async function POST(
           resourcePatterns: customPolicy.resourcePatterns || [],
           actions: customPolicy.actions || [],
           conditions: customPolicy.conditions || null,
+          updatedAt: new Date(),
         },
       });
 

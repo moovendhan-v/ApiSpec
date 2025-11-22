@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        preferences: true,
+        UserPreferences: true,
       },
     });
 
@@ -57,7 +57,7 @@ export async function PATCH(req: Request) {
         ...(image !== undefined && { image }),
       },
       include: {
-        preferences: true,
+        UserPreferences: true,
       },
     });
 

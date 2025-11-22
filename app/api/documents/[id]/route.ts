@@ -106,9 +106,9 @@ export async function PATCH(
           },
         },
         include: {
-          workspace: {
+          Workspace: {
             include: {
-              policies: {
+              WorkspacePolicy: {
                 where: {
                   isActive: true,
                 },
@@ -120,7 +120,7 @@ export async function PATCH(
 
       if (member) {
         canEdit = ['OWNER', 'ADMIN', 'EDITOR'].includes(member.role) ||
-          member.workspace.policies.some(
+          member.Workspace.WorkspacePolicy.some(
             (p) => p.appliesTo.includes(member.role) && p.canEditDocuments
           );
       }
@@ -136,6 +136,7 @@ export async function PATCH(
     if (content && content !== document.content) {
       await prisma.documentVersion.create({
         data: {
+          id: `${document.id}-v${document.version}`,
           documentId: document.id,
           version: document.version,
           title: document.title,
@@ -217,9 +218,9 @@ export async function DELETE(
           },
         },
         include: {
-          workspace: {
+          Workspace: {
             include: {
-              policies: {
+              WorkspacePolicy: {
                 where: {
                   isActive: true,
                 },
@@ -231,7 +232,7 @@ export async function DELETE(
 
       if (member) {
         canDelete = ['OWNER', 'ADMIN'].includes(member.role) ||
-          member.workspace.policies.some(
+          member.Workspace.WorkspacePolicy.some(
             (p) => p.appliesTo.includes(member.role) && p.canDeleteDocuments
           );
       }

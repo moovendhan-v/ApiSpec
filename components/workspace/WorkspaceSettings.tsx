@@ -19,7 +19,7 @@ interface Workspace {
   slug: string;
   description: string | null;
   visibility: string;
-  policies: any[];
+  policies?: any[];
 }
 
 interface WorkspaceSettingsProps {

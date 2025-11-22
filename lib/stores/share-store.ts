@@ -29,4 +29,52 @@ export const useShareStore = create<ShareStore>()(
       shareLinks: {},
 
       addShareLink: (documentId, link) => {
-        set((state) 
+        set((state) => ({
+          shareLinks: {
+            ...state.shareLinks,
+            [documentId]: { ...link, createdAt: new Date().toISOString() },
+          },
+        }));
+      },
+
+      getShareLink: (documentId) => {
+        const link = get().shareLinks[documentId];
+        if (!link) return null;
+        
+        // Check if expired
+        if (new Date(link.expiresAt) < new Date()) {
+          get().removeShareLink(documentId);
+          return null;
+        }
+        
+        return link;
+      },
+
+      removeShareLink: (documentId) => {
+        set((state) => {
+          const { [documentId]: _, ...rest } = state.shareLinks;
+          return { shareLinks: rest };
+        });
+      },
+
+      clearExpiredLinks: () => {
+        set((state) => {
+          const now = new Date();
+          const validLinks = Object.entries(state.shareLinks).reduce(
+            (acc, [id, link]) => {
+              if (new Date(link.expiresAt) > now) {
+                acc[id] = link;
+              }
+              return acc;
+            },
+            {} as Record<string, ShareLink>
+          );
+          return { shareLinks: validLinks };
+        });
+      },
+    }),
+    {
+      name: 'share-store',
+    }
+  )
+);

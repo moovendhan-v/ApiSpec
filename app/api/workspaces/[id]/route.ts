@@ -48,7 +48,7 @@ export async function GET(
             joinedAt: 'asc',
           },
         },
-        documents: {
+        Document: {
           select: {
             id: true,
             title: true,
@@ -61,7 +61,7 @@ export async function GET(
             updatedAt: 'desc',
           },
         },
-        policies: {
+        WorkspacePolicy: {
           where: {
             isActive: true,
           },
@@ -69,7 +69,7 @@ export async function GET(
         _count: {
           select: {
             Document: true,
-            members: true,
+            WorkspaceMember: true,
           },
         },
       },
@@ -80,7 +80,7 @@ export async function GET(
     }
 
     // Check if user has access
-    const isMember = workspace.members.some((m) => m.userId === user.id);
+    const isMember = workspace.WorkspaceMember.some((m) => m.userId === user.id);
     const isCreator = workspace.createdById === user.id;
 
     if (!isMember && !isCreator && workspace.visibility !== 'PUBLIC') {

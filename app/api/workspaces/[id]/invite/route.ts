@@ -38,9 +38,9 @@ export async function POST(
         },
       },
       include: {
-        workspace: {
+        Workspace: {
           include: {
-            policies: {
+            WorkspacePolicy: {
               where: {
                 isActive: true,
               },
@@ -56,7 +56,7 @@ export async function POST(
 
     // Check permissions
     const canInvite = ['OWNER', 'ADMIN'].includes(member.role) ||
-      member.workspace.policies.some(
+      member.Workspace.WorkspacePolicy.some(
         (p) => p.appliesTo.includes(member.role) && p.canInviteMembers
       );
 
@@ -98,22 +98,24 @@ export async function POST(
 
     const invitation = await prisma.workspaceInvitation.create({
       data: {
+        id: `inv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         workspaceId: params.id,
         email,
         role,
         token,
         invitedById: user.id,
         expiresAt,
+        updatedAt: new Date(),
       },
       include: {
-        workspace: {
+        Workspace: {
           select: {
             id: true,
             name: true,
             slug: true,
           },
         },
-        invitedBy: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -171,7 +173,7 @@ export async function GET(
         workspaceId: params.id,
       },
       include: {
-        invitedBy: {
+        User: {
           select: {
             id: true,
             name: true,

@@ -84,6 +84,7 @@ export async function PUT(request: Request) {
         content,
         isPublic: false,
         userId: user.id,
+        updatedAt: new Date(),
       },
     });
 

@@ -28,10 +28,10 @@ interface Workspace {
     name: string | null;
     email: string | null;
   };
-  members: any[];
-  documents: any[];
-  policies: any[];
-  _count: {
+  members?: any[];
+  documents?: any[];
+  policies?: any[];
+  _count?: {
     documents: number;
     members: number;
   };
@@ -99,9 +99,9 @@ export default function WorkspacePage({ params }: { params: { id: string } }) {
           <p className="text-muted-foreground">{workspace.description}</p>
         )}
         <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
-          <span>{workspace._count.members} members</span>
+          <span>{workspace._count?.members || 0} members</span>
           <span>•</span>
-          <span>{workspace._count.documents} documents</span>
+          <span>{workspace._count?.documents || 0} documents</span>
           <span>•</span>
           <span className="px-2 py-1 rounded-full bg-muted text-xs">
             {workspace.visibility}

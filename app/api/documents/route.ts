@@ -41,9 +41,9 @@ export async function POST(req: Request) {
           },
         },
         include: {
-          workspace: {
+          Workspace: {
             include: {
-              policies: {
+              WorkspacePolicy: {
                 where: {
                   isActive: true,
                 },
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
       // Check if user has permission to create documents
       const canCreate = ['OWNER', 'ADMIN', 'EDITOR'].includes(member.role) ||
-        member.workspace.policies.some(
+        member.Workspace.WorkspacePolicy.some(
           (p) => p.appliesTo.includes(member.role) && p.canCreateDocuments
         );
 
@@ -71,6 +71,7 @@ export async function POST(req: Request) {
     // Create the document
     const document = await prisma.document.create({
       data: {
+        id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         title,
         content,
         description: description || null,
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
         version: 1,
         userId: user.id,
         workspaceId: workspaceId || null,
+        updatedAt: new Date(),
       },
       select: {
         id: true,

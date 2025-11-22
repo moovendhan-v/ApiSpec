@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        preferences: true,
+        UserPreferences: true,
       },
     });
 
@@ -23,16 +23,18 @@ export async function GET(req: Request) {
     }
 
     // Create default preferences if they don't exist
-    if (!user.preferences) {
+    if (!user.UserPreferences) {
       const preferences = await prisma.userPreferences.create({
         data: {
+          id: `pref-${user.id}`,
           userId: user.id,
+          updatedAt: new Date(),
         },
       });
       return NextResponse.json({ preferences });
     }
 
-    return NextResponse.json({ preferences: user.preferences });
+    return NextResponse.json({ preferences: user.UserPreferences });
   } catch (error) {
     console.error('Error fetching preferences:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
@@ -50,7 +52,7 @@ export async function PATCH(req: Request) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        preferences: true,
+        UserPreferences: true,
       },
     });
 
@@ -61,7 +63,7 @@ export async function PATCH(req: Request) {
     const data = await req.json();
 
     let preferences;
-    if (user.preferences) {
+    if (user.UserPreferences) {
       // Update existing preferences
       preferences = await prisma.userPreferences.update({
         where: { userId: user.id },

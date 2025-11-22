@@ -12,7 +12,7 @@ export async function GET(
     const invitation = await prisma.workspaceInvitation.findUnique({
       where: { token: params.token },
       include: {
-        workspace: {
+        Workspace: {
           select: {
             id: true,
             name: true,
@@ -21,7 +21,7 @@ export async function GET(
             avatar: true,
           },
         },
-        invitedBy: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -119,12 +119,14 @@ export async function POST(
     // Add user to workspace
     const member = await prisma.workspaceMember.create({
       data: {
+        id: `member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         workspaceId: invitation.workspaceId,
         userId: user.id,
         role: invitation.role,
+        updatedAt: new Date(),
       },
       include: {
-        workspace: {
+        Workspace: {
           select: {
             id: true,
             name: true,

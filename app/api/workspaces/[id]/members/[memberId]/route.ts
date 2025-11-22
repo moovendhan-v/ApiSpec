@@ -101,9 +101,9 @@ export async function DELETE(
         },
       },
       include: {
-        workspace: {
+        Workspace: {
           include: {
-            policies: {
+            WorkspacePolicy: {
               where: {
                 isActive: true,
               },
@@ -118,7 +118,7 @@ export async function DELETE(
     }
 
     const canRemove = ['OWNER', 'ADMIN'].includes(currentMember.role) ||
-      currentMember.workspace.policies.some(
+      currentMember.Workspace.WorkspacePolicy.some(
         (p) => p.appliesTo.includes(currentMember.role) && p.canRemoveMembers
       );
 
